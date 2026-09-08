@@ -114,36 +114,40 @@ for s in (+1,-1):                      # два цилиндра, ось X — �
              n=32,spec=0.6,shin=50)
         disc((hc+sx*HUBL/2,y,0),(sx,0,0),HUBR,(0.24,0.26,0.30),n=32,spec=0.4)
         tips[(s,sx)]=hc                # ← точка крепления балки
-        # радиаторы: 4 луча от узла, ребром к Солнцу
-        for k in range(4):
-            a=math.pi/4+k*math.pi/2
-            dy=math.cos(a); dz=math.sin(a)
-            cc=(hc, y+dy*(HUBR+2200), dz*(HUBR+2200))
-            plate(cc,(1,0,0),(0,dy,dz),1100,2200,RAD,spec=0.25,shin=20)
-        # крылья батарей на гимбалах — плоскостью к Солнцу (+X)
-        for k in (+1,-1):
-            gz=k*(HUBR+700)
-            tube((hc,y,k*HUBR),(hc,y,gz),300,300,HUBC,n=16,spec=0.5)
-            for seg in range(4):
-                z0=k*(HUBR+700+seg*1700); z1=k*(HUBR+700+(seg+1)*1700-120)
-                zc=(z0+z1)/2
-                plate((hc+300,y,zc),(0,1,0),(0,0,1),1400,abs(z1-z0)/2,
-                      SOLAR,spec=0.55,shin=60)
-            tube((hc,y,k*(HUBR+700)),(hc,y,k*(HUBR+700+4*1700)),110,110,
-                 HUBC,n=10,spec=0.5)
-        if sx>0:                       # НОС: модули стыковки
-            for k,(dy,dz) in enumerate([(1,0.35),(-1,0.35)]):
-                mc=(hc+sx*900, y+dy*2100, dz*1500)
-                box(mc,1500,900,900,WHITE,spec=0.35,shin=30)
-                disc((mc[0]+1500,mc[1],mc[2]),(1,0,0),700,DARK,n=20,spec=0.4)
-        else:                          # КОРМА: антенны тарелками на Землю (-X)
-            for k,(dy,dz,rr) in enumerate([(1.9,1.5,2100),(-1.9,1.5,1700),
-                                           (0.0,-2.3,2400)]):
-                ac=(hc-1200, y+dy*1800, dz*1800)
-                tube((hc,y+dy*900,dz*900),ac,220,220,HUBC,n=12,spec=0.5)
-                dome(ac,(-1,0,0),rr,rr*0.42,WHITE,nu=28,nv=8,spec=0.30,shin=25)
+# (навесное оборудование перенесено на балку — см. ниже)
 
 # ═══ БАЛКИ: ТОЛЬКО МЕЖДУ КОНЧИКАМИ ЦАПФ ═══
+def equip_on_truss(x, sx):
+    """Оборудование стоит НА БАЛКЕ, между узлами, а не на узлах."""
+    a=HUBR*0.85
+    # крылья батарей: по балке, плоскостью к Солнцу (+X)
+    for k,yc in enumerate((-6200,-2100,2100,6200)):
+        for kz in (+1,-1):
+            tube((x,yc,kz*a),(x,yc,kz*(a+700)),240,240,HUBC,n=12,spec=0.5)
+            for seg in range(4):
+                z0=kz*(a+700+seg*1800); z1=kz*(a+700+(seg+1)*1800-130)
+                plate((x+260,yc,(z0+z1)/2),(0,1,0),(0,0,1),1250,
+                      abs(z1-z0)/2,SOLAR,spec=0.55,shin=60)
+            tube((x,yc,kz*(a+700)),(x,yc,kz*(a+700+4*1800)),100,100,
+                 HUBC,n=8,spec=0.5)
+    # радиаторы: белые панели вдоль балки, ребром к Солнцу
+    for yc in (-8000,-4200,4200,8000):
+        for kz in (+1,-1):
+            plate((x,yc,kz*(a+2400)),(1,0,0),(0,0,1),1000,2100,RAD,
+                  spec=0.25,shin=20)
+    if sx>0:
+        # НОС: модули стыковки на балке
+        for yc in (-3600,0,3600):
+            box((x+a*1.5,yc,0),1300,1500,900,WHITE,spec=0.35,shin=30)
+            disc((x+a*1.5+1300,yc,0),(1,0,0),620,DARK,n=20,spec=0.4)
+        box((x+a*1.5,0,1900),900,2600,900,WHITE,spec=0.35,shin=30)
+    else:
+        # КОРМА: антенны на балке, тарелками к Земле (-X)
+        for yc,rr in ((-6800,1900),(-2300,2300),(2300,2300),(6800,1900)):
+            tube((x,yc,a),(x-900,yc,a+1500),200,200,HUBC,n=10,spec=0.5)
+            dome((x-900,yc,a+1500),(-1,0,0),rr,rr*0.40,WHITE,
+                 nu=28,nv=8,spec=0.30,shin=25)
+
 def truss(x, y0, y1, bays=16):
     """Ферма между двумя узлами. Строится от tips до tips."""
     a=HUBR*0.85
@@ -163,6 +167,7 @@ for sx in (+1,-1):
     x=tips[(+1,sx)]
     assert abs(tips[(+1,sx)]-tips[(-1,sx)])<1e-9, 'узлы не на одной линии'
     truss(x, +GAPAX/2, -GAPAX/2)
+    equip_on_truss(x, sx)
 
 print(f'вершин {len(V)}, треугольников {len(F)}')
 print(f'кончики цапф по X: нос {tips[(1,1)]:.0f} м, корма {tips[(1,-1)]:.0f} м')
@@ -172,7 +177,7 @@ print(f'габарит корпуса по X: ±{HALF+CEND:.0f} м -> балка
 
 # ═══ КАМЕРА ═══
 W,H=1920,1080
-eye=np.array([150000., 66000., 30000.])
+eye=np.array([166000., 92000., 62000.])
 tgt=np.array([2000., 0., 0.])
 up =np.array([0.,0.,1.])
 fw=tgt-eye; fw/=np.linalg.norm(fw)
@@ -258,7 +263,11 @@ im=Image.fromarray((np.clip(out,0,1)**(1/1.9)*255).astype(np.uint8))
 
 # Земля — вдали за кормой станции
 d=ImageDraw.Draw(im)
-ex_,ey_,er=300,180,13
+_earth=np.array([-500000., -160000., -100000.])
+_r=_earth-eye
+_cam=np.array([_r@rt,_r@uu,_r@fw])
+ex_=int(W/2+_cam[0]/_cam[2]*f); ey_=int(H/2-_cam[1]/_cam[2]*f); er=24
+print(f'Земля за кормой: экран ({ex_},{ey_})')
 d.ellipse([ex_-er,ey_-er,ex_+er,ey_+er], fill=(92,132,190))
 d.ellipse([ex_-er+5,ey_-er+3,ex_+er-9,ey_+er-11], fill=(120,158,205))
 d.ellipse([ex_-er+3,ey_-er+9,ex_-er+13,ey_-er+19], fill=(96,140,110))
