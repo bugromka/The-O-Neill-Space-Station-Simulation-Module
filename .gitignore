@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+_t.py
+_pg_try.py
+*.tmp
+.DS_Store
