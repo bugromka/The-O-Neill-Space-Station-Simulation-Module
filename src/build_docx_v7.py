@@ -23,6 +23,16 @@ FIG = os.path.join(HERE, 'fig')
 SRC = os.path.join(HERE, 'MMOSON_v6.docx')
 DST = os.path.join(HERE, 'MMOSON_v7.docx')
 
+# Исходник v6 не входит в текущий checkout. Не подменяем его v7: поздние
+# блоки этого исторического генератора не являются идемпотентными. Готовый
+# v7 проверяется/нормализуется отдельным final_audit_v7.py.
+if not os.path.exists(SRC):
+    raise SystemExit(
+        'Для полной пересборки нужен отсутствующий src/MMOSON_v6.docx; '
+        'файл не реконструируется. Используйте сохранённый MMOSON_v7.docx '
+        'и src/final_audit_v7.py либо восстановите v6 из резервной копии.'
+    )
+
 d = Document(SRC)
 body = d.element.body
 
@@ -4723,6 +4733,17 @@ except Exception as _e:                        # оценка не критич�
     print('  ВНИМАНИЕ: оценка страниц не выполнена:', _e)
 
 d.save(DST)
+
+# Последний слой сборки. Поздние исторические блоки этого генератора
+# содержат намеренно сохранённые фрагменты старых ревизий; нормализатор
+# приводит активный текст и таблицы к единой канонической модели 09.09.2026.
+try:
+    from final_audit_v7 import apply_audit
+    apply_audit(DST)
+    print('  финальная сквозная нормализация v7 применена')
+except Exception as _e:
+    print('  ВНИМАНИЕ: финальная нормализация не выполнена:', _e)
+    raise
 
 print('Сохранено:', DST)
 print('Рисунков размещено:', len(FIGURES))

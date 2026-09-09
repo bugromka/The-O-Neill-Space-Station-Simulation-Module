@@ -119,10 +119,10 @@ def fig01():
     ax.annotate('', xy=(4.0, BOT - 1.1), xytext=(9.5, BOT - 1.1),
                 arrowprops=dict(arrowstyle='-|>', color=C_STEEL, lw=1.3,
                                 connectionstyle='arc3,rad=-0.45'))
-    # к Солнцу
+    # условное направление на Солнце; ось станции этим не закрепляется
     ax.annotate('', xy=(2.5, TOP + H + 4.0), xytext=(10.5, TOP + H + 4.0),
                 arrowprops=dict(arrowstyle='-|>', color=C_WARN, lw=1.6))
-    ax.text(11.4, TOP + H + 4.0, 'к Солнцу', ha='left', va='center',
+    ax.text(11.4, TOP + H + 4.0, 'условно к Солнцу', ha='left', va='center',
             fontsize=8.0, color='#8a6a1a')
 
     # размеры
@@ -492,9 +492,10 @@ def fig07():
     # состав по табл. 4.3 с учётом собственного веса пояса (п. Б.16)
     lbl = ['Атмосферное давление', 'Собственный вес пояса 0,85 м',
            'Грунт, 1,5 м', 'Радиационная защита, 1,0 м',
-           'Застройка, инфраструктура', 'Вода: водоёмы, почва, оборотная']
-    val = [101.3, 65.4, 28.0, 14.7, 4.9, 3.7]
-    cols = ['#9fb8d0', C_STEEL, '#8a6a4a', '#7d6b58', '#b0b7bf', '#5b8fa8']
+           'Застройка, инфраструктура', 'Вода: водоёмы, почва, оборотная',
+           'Гермооболочка и теплоизоляция']
+    val = [101.3, 65.4, 28.0, 14.7, 4.9, 3.7, 4.3]
+    cols = ['#9fb8d0', C_STEEL, '#8a6a4a', '#7d6b58', '#b0b7bf', '#5b8fa8', '#9aa4ae']
     Q = sum(val)
     y = np.arange(len(lbl))[::-1]
     a1.barh(y, val, 0.62, color=cols)
@@ -503,12 +504,12 @@ def fig07():
                 va='center', fontsize=7.6)
     a1.set_yticks(y); a1.set_yticklabels(lbl, fontsize=7.4)
     a1.set_xlabel('нагрузка на силовой пояс, кПа', fontsize=8.3)
-    a1.set_xlim(0, 145)
+    a1.set_xlim(0, 235)
     a1.grid(axis='x', alpha=.3, ls=':')
-    a1.set_title(f'Состав расчётной нагрузки\nq = {Q:.1f} кПа'.replace('.', ','),
+    a1.set_title('Состав расчётной нагрузки\nq = 222,4 кПа',
                  fontsize=9.5)
 
-    sig_ext, sig_own = 923., 385.
+    sig_ext, sig_own = 898., 410.
     sig = sig_ext + sig_own
     a2.bar([0], [sig_ext], 0.42, color=C_STEEL,
            label=f'от внешней нагрузки — {sig_ext:.0f} МПа ({sig_ext/sig*100:.0f} %)')
@@ -648,7 +649,7 @@ def fig10():
     lbl = ['Осевые светотепловые балки', 'Тепловые насосы сброса тепла',
            'Удержание станции в точке L1', 'Резерв и потери передачи',
            'Жизнеобеспечение, насосы', 'Быт, транспорт, промышленность']
-    val = [503, 96, 63, 33, 20, 6]
+    val = [503, 96, 63.4, 33, 20, 6]
     cols = [C_WARN, '#5b8fa8', C_ACC, C_GREY, C_OK, '#9b6b9e']
     y = np.arange(len(lbl))[::-1]
     ax.barh(y, val, 0.66, color=cols)
@@ -663,7 +664,7 @@ def fig10():
     for sp in ('top', 'right', 'left'):
         ax.spines[sp].set_visible(False)
 
-    lg.text(0.0, 1.0, 'Потребление электроэнергии: всего 721 ГВт',
+    lg.text(0.0, 1.0, 'Потребление электроэнергии: всего 721,4 ГВт',
             fontsize=9.5, weight='bold', va='top', transform=lg.transAxes)
     yy = 0.855
     for i, (n, v, c) in enumerate(zip(lbl, val, cols)):
@@ -1831,3 +1832,9 @@ def fig24():
     fig.subplots_adjust(left=0.085, right=0.565, top=0.94, bottom=0.11)
     fig.savefig(os.path.join(OUT, 'fig24_panel_choice.png'), dpi=150)
     plt.close(fig)
+
+
+# fig24 определена после исторического списка из 23 иллюстраций, поэтому
+# вызывается отдельным блоком только при прямом запуске генератора.
+if __name__ == '__main__':
+    fig24()
