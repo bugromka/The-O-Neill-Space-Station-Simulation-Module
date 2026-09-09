@@ -21,6 +21,7 @@ from pathlib import Path
 import sys
 
 from docx import Document
+from docx.text.paragraph import Paragraph
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DOC = ROOT / "MMOSON_v7.docx"
@@ -87,9 +88,38 @@ def _require_cell(table, needle: str, replacement: str) -> None:
         raise ValueError(f"Не найдена ячейка: {needle!r}")
 
 
+def _remove_toc(doc) -> bool:
+    """Remove the generated contents block, preserving the real first chapter.
+
+    The historical builder emits both a Word TOC field and cached static lines.
+    The project now deliberately ships without an automatically changing table
+    of contents, so remove the whole block through the first real heading.
+    """
+    body = doc.element.body
+    children = list(body)
+    start = None
+    stop = None
+    for idx, child in enumerate(children):
+        if not child.tag.endswith('}p'):
+            continue
+        text = Paragraph(child, doc).text.strip()
+        if start is None and text == "СОДЕРЖАНИЕ":
+            start = idx
+            continue
+        if start is not None and text == "1. ВВЕДЕНИЕ. КОНЦЕПЦИЯ ПРОЕКТА":
+            stop = idx
+            break
+    if start is None or stop is None or stop <= start:
+        return False
+    for child in children[start:stop]:
+        body.remove(child)
+    return True
+
+
 def apply_audit(doc_path=DEFAULT_DOC) -> Path:
     doc_path = Path(doc_path)
     doc = Document(doc_path)
+    _remove_toc(doc)
 
     # ── Основной текст: геометрия, L1, ориентация ────────────────────────
     _replace_prefix(doc, "После завершения строительства, герметизации",
