@@ -1,349 +1,302 @@
 # -*- coding: utf-8 -*-
-"""ММОСО'Н: четыре согласованных вида станции.
+"""ММОСО'Н — согласованный технический лист внешней компоновки.
 
-Все виды строятся из ОДНОГО набора констант, поэтому детали
-(цапфы, узлы, балка, панели, радиаторы, антенны, стыковка)
-совпадают между видами по построению.
+Четыре вида из одного канона:
+A — боковой вид с пустым межцилиндровым зазором;
+B — передняя неподвижная рама и причальные модули;
+C — путь от причала через гермопереход и полый осевой вал в шахты;
+D — встречное вращение, питание магнитных опор и перемещение станции.
 """
 import math
+import random
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.patches import (Rectangle, Circle, Ellipse, Polygon,
-                                FancyArrowPatch, Wedge, Arc)
+from matplotlib.patches import Rectangle, Circle, Ellipse, FancyBboxPatch, FancyArrowPatch, Arc, Polygon
 from matplotlib.lines import Line2D
-import random
 
 plt.rcParams['font.family'] = 'DejaVu Sans'
 
-# ═══ ЕДИНЫЕ ПАРАМЕТРЫ (метры) ═══
-R      = 5000.        # радиус цилиндра
-LCYL   = 40000.       # цилиндрическая часть
-CEND   = 4500.        # полуось купола вдоль оси
-LFULL  = 49000.       # полная длина корпуса
-GAPAX  = 16000.       # расстояние между осями цилиндров
-AXLEN  = 6000.        # вылет цапфы наружу
-AXR    = 260.         # радиус цапфы (как светотепловая балка)
-HUBR   = 900.         # радиус подшипникового узла
-HUBW   = 1400.        # длина узла вдоль оси
-RADL   = 7000.        # вылет радиатора
-RADW   = 2600.        # ширина панели радиатора
-DISH   = 1500.        # диаметр антенны
+# Канон документа, м
+R = 5000.0
+LCYL = 40000.0
+CEND = 4500.0
+LFULL = 49000.0
+GAPAX = 21000.0
+AXLEN = 9000.0
+D_BEAR = 400.0
+P_BEAR = 2.0
 
-# ═══ ПАЛИТРА ═══
-BG='#080d16'; INK='#e9eff7'; DIM='#8ea3bf'; FAINT='#5d6f8a'
-STEEL='#c3cad3'; STEEL_D='#8e97a3'; STEEL_L='#e6eaef'
-SOLAR='#1d3f7a'; SOLAR_L='#3563b5'; GRID='#5f8fd8'
-RADC='#c14a36'; RADG='#e8734f'; HUB='#7d8794'; TRUSS='#9aa5b4'
-ANT='#dfe5ec'; DOCK='#aab3c0'
+BG = '#080d16'; INK = '#e9eff7'; DIM = '#9aacc4'; FAINT = '#61758f'
+STEEL = '#b8c2cc'; STEEL_D = '#687686'; STEEL_L = '#e6edf4'
+GRAPH = '#273544'; SOLAR = '#173f7c'; SOLAR_L = '#4579c5'; GRID = '#79a7e6'
+RAD = '#b83c32'; RAD_L = '#e46b52'; ANT = '#e8edf2'; DOCK = '#aeb9c5'
+MAG = '#55a6c8'; POWER = '#f0bd57'; SAFE = '#78c89a'
 
-fig = plt.figure(figsize=(1900/150, 1500/150), dpi=150)
+W, H = 1900, 1500
+fig = plt.figure(figsize=(W/150, H/150), dpi=150)
 fig.patch.set_facecolor(BG)
-ax = fig.add_axes([0,0,1,1]); ax.set_xlim(0,1900); ax.set_ylim(0,1500)
-ax.axis('off')
+ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis('off')
 
-def T(x,y,s,size=9,color=INK,ha='left',va='center',w=None,st=None,rot=0,z=30):
-    ax.text(x,y,s,fontsize=size,color=color,ha=ha,va=va,fontweight=w,
-            fontstyle=st,rotation=rot,zorder=z)
+def T(x, y, text, size=9, color=INK, ha='left', va='center', weight=None, style=None, z=30):
+    ax.text(x, y, text, fontsize=size, color=color, ha=ha, va=va,
+            fontweight=weight, fontstyle=style, zorder=z)
 
-def lead(x0,y0,x1,y1,c=FAINT,lw=0.8):
-    ax.add_line(Line2D([x0,x1],[y0,y1],color=c,lw=lw,zorder=25))
-    ax.add_patch(Circle((x0,y0),3.0,fc=c,ec='none',zorder=25))
+def L(x0, y0, x1, y1, color=FAINT, lw=1.0, ls='-', z=20, alpha=1.0):
+    ax.add_line(Line2D([x0, x1], [y0, y1], color=color, lw=lw,
+                       ls=ls, zorder=z, alpha=alpha))
 
-random.seed(5)
-for _ in range(1400):
-    x,y=random.uniform(0,1900),random.uniform(0,1500); r=random.random()
-    ax.add_patch(Circle((x,y),0.5+r*1.1,fc='white',alpha=0.05+r*0.30,
-                        ec='none',zorder=0))
+def arrow(x0, y0, x1, y1, color=INK, lw=1.2, z=25, ms=12):
+    ax.add_patch(FancyArrowPatch((x0, y0), (x1, y1), arrowstyle='-|>',
+                                 mutation_scale=ms, linewidth=lw,
+                                 color=color, zorder=z))
 
-# ════════════════════ ЭЛЕМЕНТЫ (общие для видов) ════════════════════
+def leader(x0, y0, x1, y1, text, color=FAINT, size=8, side='left'):
+    L(x0, y0, x1, y1, color=color, lw=.8, z=26)
+    ax.add_patch(Circle((x0, y0), 3, fc=color, ec='none', zorder=27))
+    T(x1 + (6 if side == 'left' else -6), y1, text, size=size, color=INK,
+      ha='left' if side == 'left' else 'right', va='center', z=27)
 
-def solar_dome(cx, cy, rx, ry, side, K):
-    """Купол, сплошь покрытый фотоэлементами. side=+1 нос вправо."""
-    th1,th2 = (-90,90) if side>0 else (90,270)
-    ax.add_patch(Wedge((cx,cy), rx, th1, th2, fc=SOLAR, ec=STEEL_D,
-                       lw=1.0, zorder=8))
-    # сетка ячеек по дуге
-    for k in range(1,9):
-        f=k/9.
-        w_=rx*math.sqrt(max(0.,1-(2*f-1)**2)) if False else rx*(1-abs(2*f-1))
-        yy=cy-ry+2*ry*f
-        hw=rx*math.sqrt(max(0.,1-((yy-cy)/ry)**2))
-        ax.add_line(Line2D([cx,cx+side*hw],[yy,yy],color=GRID,lw=0.5,
-                           alpha=.55,zorder=9))
-    for k in range(1,5):
-        f=k/5.
-        ax.add_patch(Arc((cx,cy), 2*rx*f, 2*ry*f, theta1=th1, theta2=th2,
-                         color=GRID, lw=0.5, alpha=.55, zorder=9))
+def panel(x, y, w, h, title, subtitle=None):
+    ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle='round,pad=0.012,rounding_size=10',
+                                fc='#0d1724', ec='#263c56', lw=1.0, zorder=2))
+    T(x+22, y+h-30, title, size=11.5, color=INK, weight='bold', z=4)
+    if subtitle:
+        T(x+22, y+h-52, subtitle, size=7.4, color=DIM, z=4)
 
-def axle_hub(hx, hy, side, K, front, label=True):
-    """Цапфа + подшипниковый узел на оси вращения."""
-    L_=AXLEN*K; r_=max(AXR*K,1.2); HR=max(HUBR*K,3.0); HW=max(HUBW*K,3.0)
-    ax.add_patch(Rectangle((hx if side>0 else hx-L_, hy-r_), L_, 2*r_,
-                           fc=STEEL_D, ec=STEEL, lw=0.7, zorder=11))
-    ex = hx+side*L_
-    ax.add_patch(Rectangle((ex-side*HW/2-HW/2+HW/2 if False else ex-HW/2,
-                            hy-HR), HW, 2*HR, fc=HUB, ec=STEEL_L,
-                           lw=0.9, zorder=13))
-    ax.add_patch(Circle((ex,hy), HR*0.55, fc='#39424e', ec=STEEL_L,
-                        lw=0.8, zorder=14))
-    return ex
+def hull(x0, x1, y, r):
+    # Однотонная гладкая оболочка; без наружных колец, рёбер и оборудования.
+    ax.add_patch(FancyBboxPatch((x0, y-r), x1-x0, 2*r,
+                                boxstyle=f'round,pad=0,rounding_size={r}',
+                                fc=STEEL, ec=STEEL_D, lw=1.0, zorder=8))
+    ax.add_patch(FancyBboxPatch((x0+12, y-r+12), x1-x0-24, 2*r-24,
+                                boxstyle=f'round,pad=0,rounding_size={max(r-12,1)}',
+                                fc='#aeb9c5', ec='none', alpha=.22, zorder=9))
 
-def radiators(ex, hy, side, K, n=3):
-    """Радиаторы на узле — плоскости поперёк."""
-    RL=RADL*K; RW=RADW*K
-    for i in range(n):
-        off=(i-(n-1)/2)*RW*1.15
-        for s2 in (+1,-1):
-            ax.add_patch(Polygon([[ex+off-RW*0.30, hy+s2*HUBR*K*0.6],
-                                  [ex+off+RW*0.30, hy+s2*HUBR*K*0.6],
-                                  [ex+off+RW*0.22, hy+s2*(HUBR*K*0.6+RL)],
-                                  [ex+off-RW*0.22, hy+s2*(HUBR*K*0.6+RL)]],
-                                 closed=True, fc=RADC, ec=RADG, lw=0.6,
-                                 alpha=.95, zorder=12))
+def trunnion(x_shell, x_frame, y):
+    L(x_shell, y, x_frame, y, color=STEEL_D, lw=7, z=11)
+    L(x_shell, y+4, x_frame, y+4, color=STEEL_L, lw=1.2, z=12)
+    ax.add_patch(Circle((x_frame, y), 15, fc=GRAPH, ec=STEEL_L, lw=1.0, zorder=14))
+    ax.add_patch(Circle((x_frame, y), 7, fc=MAG, ec='none', zorder=15))
 
-def dock(ex, hy, side, K):
-    """Модули стыковки на носовом узле."""
-    d=max(DISH*K*0.55,2.0)
-    for i in range(3):
-        yy=hy+(i-1)*d*2.2
-        ax.add_patch(Rectangle((ex+side*d*0.8, yy-d*0.45), d*2.0, d*0.9,
-                               fc=DOCK, ec=STEEL_L, lw=0.6, zorder=15))
-        ax.add_patch(Circle((ex+side*d*2.9, yy), d*0.42, fc='#5b6675',
-                            ec=STEEL_L, lw=0.6, zorder=15))
+def solar_wing(x, y, side=1, vertical=True, scale=1.0):
+    if vertical:
+        w, h = 34*scale, 120*scale
+        xx = x if side > 0 else x-w
+        yy = y-h/2
+    else:
+        w, h = 120*scale, 34*scale
+        xx = x-w/2; yy = y if side > 0 else y-h
+    ax.add_patch(Rectangle((xx, yy), w, h, fc=SOLAR, ec=SOLAR_L,
+                           lw=.8, zorder=16))
+    for i in range(1, 5):
+        if vertical: L(xx+w*i/5, yy, xx+w*i/5, yy+h, GRID, .45, z=17, alpha=.7)
+        else: L(xx, yy+h*i/5, xx+w, yy+h*i/5, GRID, .45, z=17, alpha=.7)
 
-def antennas(ex, hy, side, K):
-    """Антенны на кормовом узле; тарелки независимо наводятся на Землю."""
-    d=max(DISH*K,2.4)
-    for i,(dy,sc) in enumerate([(2.6,1.0),(0.0,1.35),(-2.6,0.85)]):
-        yy=hy+dy*d
-        ax.add_line(Line2D([ex,ex+side*d*0.9],[yy,yy],color=STEEL,lw=0.9,
-                           zorder=15))
-        ax.add_patch(Ellipse((ex+side*d*1.35, yy), d*0.85*sc, d*1.7*sc,
-                             fc=ANT, ec=STEEL_D, lw=0.7, zorder=16))
-        ax.add_patch(Ellipse((ex+side*d*1.50, yy), d*0.40*sc, d*1.1*sc,
-                             fc='#b9c2cd', ec='none', zorder=17))
+def radiator_panel(x, y, w, h, angle=0):
+    # Красный только для радиаторов.
+    ax.add_patch(Rectangle((x-w/2, y-h/2), w, h, angle=angle,
+                           fc=RAD, ec=RAD_L, lw=.8, zorder=16))
+    for i in range(1, 4):
+        xx=x-w/2+w*i/4
+        L(xx, y-h/2+3, xx, y+h/2-3, RAD_L, .45, z=17, alpha=.8)
 
-def truss(x1,y1,x2,y2,K,seg=13):
-    """Балка между узлами: только по линии осей."""
-    ax.add_line(Line2D([x1,x2],[y1,y2],color=TRUSS,lw=2.2,zorder=12))
-    dx,dy=(x2-x1)/seg,(y2-y1)/seg
-    w=max(HUBR*K*0.42,1.6)
-    nx,ny=-(y2-y1),(x2-x1); ln=math.hypot(nx,ny) or 1; nx,ny=nx/ln*w,ny/ln*w
-    ax.add_line(Line2D([x1+nx,x2+nx],[y1+ny,y2+ny],color=TRUSS,lw=1.0,zorder=12))
-    ax.add_line(Line2D([x1-nx,x2-nx],[y1-ny,y2-ny],color=TRUSS,lw=1.0,zorder=12))
-    for i in range(seg):
-        a=(x1+dx*i, y1+dy*i); b=(x1+dx*(i+1), y1+dy*(i+1))
-        ax.add_line(Line2D([a[0]+nx,b[0]-nx],[a[1]+ny,b[1]-ny],
-                           color=TRUSS,lw=0.5,alpha=.85,zorder=12))
+def dish(x, y, scale=1.0, side=1):
+    r=18*scale
+    ax.add_patch(Ellipse((x, y), 2*r, 1.15*r, angle=side*18,
+                         fc=ANT, ec=STEEL_D, lw=.8, zorder=17))
+    L(x-side*r*.65, y, x+side*r*.65, y, STEEL_D, .6, z=18)
+    ax.add_patch(Circle((x+side*r*.12, y), 2.5*scale, fc=GRAPH, ec=STEEL_D, lw=.4, zorder=18))
 
-def hull_side(cx, cy, K):
-    """Корпус цилиндра сбоку: обечайка + два купола в панелях."""
-    hl=LCYL/2*K; r=R*K; ce=CEND*K
-    ax.add_patch(Rectangle((cx-hl, cy-r), 2*hl, 2*r, fc=STEEL,
-                           ec=STEEL_D, lw=1.0, zorder=8))
-    for k in range(1,10):
-        xx=cx-hl+2*hl*k/10
-        ax.add_line(Line2D([xx,xx],[cy-r,cy+r],color=STEEL_D,lw=0.5,
-                           alpha=.55,zorder=9))
-    ax.add_line(Line2D([cx-hl,cx+hl],[cy+r*0.45,cy+r*0.45],color=STEEL_L,
-                       lw=1.4,alpha=.5,zorder=9))
-    solar_dome(cx+hl, cy, ce, r, +1, K)
-    solar_dome(cx-hl, cy, ce, r, -1, K)
+def front_frame(x, ys, scale=1.0):
+    # Фиксированная поперечная рама только в торцевой плоскости.
+    y0, y1 = min(ys)-105*scale, max(ys)+105*scale
+    ax.add_patch(Rectangle((x-10*scale, y0), 20*scale, y1-y0,
+                           fc=GRAPH, ec=STEEL_L, lw=1.0, zorder=10))
+    for y in ys:
+        ax.add_patch(Circle((x, y), 29*scale, fc=GRAPH, ec=STEEL_L, lw=1.0, zorder=14))
+        ax.add_patch(Circle((x, y), 12*scale, fc=MAG, ec='none', zorder=15))
+        trunnion(x-42*scale, x-9*scale, y)
+        # Два защищённых docking corridor на каждый осевой узел.
+        for dy in (-38, 38):
+            ax.add_patch(FancyBboxPatch((x+8*scale, y+dy*scale-9*scale),
+                                        75*scale, 18*scale,
+                                        boxstyle='round,pad=0,rounding_size=7',
+                                        fc=DOCK, ec=STEEL_L, lw=.7, zorder=15))
+            ax.add_patch(Circle((x+84*scale, y+dy*scale), 8*scale,
+                                fc=GRAPH, ec=STEEL_L, lw=.6, zorder=16))
+        radiator_panel(x+6*scale, y+95*scale, 18*scale, 58*scale, angle=0)
+        radiator_panel(x+27*scale, y-95*scale, 18*scale, 58*scale, angle=0)
+        solar_wing(x+47*scale, y+80*scale, side=1, vertical=True, scale=scale*.78)
+        solar_wing(x+47*scale, y-80*scale, side=-1, vertical=True, scale=scale*.78)
 
-# ════════════════════ ВИД A: СБОКУ ════════════════════
-T(60,1442,"ММОСО\u2019Н", size=30, w='bold')
-T(60,1414,"Модуль моделирования орбитальной станции О\u2019Нилла · внешний вид",
-  size=12, color=DIM)
-T(60,1394,"один набор деталей во всех проекциях: цапфа — подшипниковый узел — "
-          "балка; панели на куполах; спереди стыковка, сзади антенны",
-  size=8.6, color=FAINT, st='italic')
-ax.add_line(Line2D([60,1180],[1380,1380],color='#22334d',lw=1.0,zorder=5))
+def rear_frame(x, ys, scale=1.0):
+    y0, y1 = min(ys)-105*scale, max(ys)+105*scale
+    ax.add_patch(Rectangle((x-10*scale, y0), 20*scale, y1-y0,
+                           fc=GRAPH, ec=STEEL_L, lw=1.0, zorder=10))
+    for j,y in enumerate(ys):
+        ax.add_patch(Circle((x, y), 29*scale, fc=GRAPH, ec=STEEL_L, lw=1.0, zorder=14))
+        ax.add_patch(Circle((x, y), 12*scale, fc=MAG, ec='none', zorder=15))
+        trunnion(x+42*scale, x+9*scale, y)
+    # Three dishes total on the rear frame, not a forest of antennas.
+    for dy,sc in [(72, .78), (0, 1.0), (-72, .78)]:
+        dish(x-50*scale, sum(ys)/2 + dy*scale, sc, side=-1)
+    for y in ys:
+        radiator_panel(x-18*scale, y+88*scale, 18*scale, 54*scale)
+        radiator_panel(x-18*scale, y-88*scale, 18*scale, 54*scale)
+        solar_wing(x-42*scale, y+74*scale, side=1, vertical=True, scale=scale*.78)
+        solar_wing(x-42*scale, y-74*scale, side=-1, vertical=True, scale=scale*.78)
+    # Two compact propulsion pods only on the rear fixed frame.
+    for y in (sum(ys)/2-54*scale, sum(ys)/2+54*scale):
+        ax.add_patch(Ellipse((x+29*scale, y), 22*scale, 12*scale,
+                             fc=GRAPH, ec=STEEL_L, lw=.6, zorder=16))
+        ax.add_patch(Ellipse((x+41*scale, y), 7*scale, 5*scale,
+                             fc='#bf7444', ec='none', zorder=17))
 
-T(60,1330,'A.  ВИД СБОКУ', size=13, w='bold')
-T(60,1314,'боковые оболочки гладкие; между ними 11 км свободного вакуумного зазора; связь только по осям', size=8.4,
-  color=DIM)
+# background stars
+random.seed(11)
+for _ in range(1200):
+    x=random.uniform(0,W); y=random.uniform(0,H)
+    a=.04+random.random()*.30
+    ax.add_patch(Circle((x,y), .5+random.random()*1.1, fc='white', ec='none', alpha=a, zorder=0))
 
-K=0.0088
-xc, yA = 640., 1120.
-dyc = GAPAX*K/2
-for s in (+1,-1):
-    hull_side(xc, yA+s*dyc, K)
-hl=LCYL/2*K
-hubs={}
-for s in (+1,-1):
-    yy=yA+s*dyc
-    ex_f=axle_hub(xc+hl+CEND*K, yy, +1, K, True)     # нос — вправо
-    ex_r=axle_hub(xc-hl-CEND*K, yy, -1, K, False)    # корма — влево
-    hubs[s]=(ex_f,ex_r,yy)
-    radiators(ex_f, yy, +1, K, 3)
-    radiators(ex_r, yy, -1, K, 3)
-    dock(ex_f, yy, +1, K)
-    antennas(ex_r, yy, -1, K)
-truss(hubs[+1][0], hubs[+1][2], hubs[-1][0], hubs[-1][2], K)   # нос
-truss(hubs[+1][1], hubs[+1][2], hubs[-1][1], hubs[-1][2], K)   # корма
+# header
+T(58,1458,"ММОСО'Н", size=29, weight='bold')
+T(58,1430,'Станция. Согласованные виды и трасса перемещения из переднего модуля стыковки', size=12, color=DIM)
+T(58,1408,'Внешние элементы только на неподвижных передней и задней рамах; оболочки гладкие; зазор между цилиндрами пуст.', size=8.6, color=FAINT, style='italic')
+L(58,1388,1842,1388,'#263c56',1)
 
-T(xc+hl+CEND*K+AXLEN*K+90, yA+dyc+95, 'НОС — условный видимый торец', size=9, w='bold',
-  color='#ffd98a')
-T(xc-hl-CEND*K-AXLEN*K-90, yA+dyc+95, 'КОРМА — условный видимый торец', size=9, w='bold',
-  color='#9fd0ff', ha='right')
+# A — side
+panel(50, 720, 1120, 640, 'A. БОКОВОЙ ВИД — ПОЛНАЯ КОМПОНОВКА',
+      'R = 5 км · цилиндрическая часть 40 км · полная длина 49 км · межосевой зазор 11 км')
+K=.0113
+x0,x1=210,890
+r=R*K
+ys=[1030, 1030+GAPAX*K]
+for y in ys: hull(x0,x1,y,r)
+front_x=x1+94; rear_x=x0-94
+for y in ys: trunnion(x1+15, front_x, y); trunnion(x0-15, rear_x, y)
+front_frame(front_x,ys,.70)
+rear_frame(rear_x,ys,.70)
+# No longitudinal truss: show only the open gap and axes.
+for y in ys: L(x0-4,y,x1+4,y, color=FAINT, lw=.7, ls='--', z=6, alpha=.5)
+T((x0+x1)/2, min(ys)-r-38, '11 км свободного вакуумного зазора — никаких балок, тоннелей, кабелей или панелей', size=8.4, color='#f0bd57', ha='center')
+leader(front_x+28, ys[0], front_x+175, ys[0]+95, 'передняя рама: 2 защищённых входа в шахты', color='#b8d0ef', size=8)
+leader(rear_x-30, ys[1], rear_x-175, ys[1]+95, 'задняя рама: 3 антенны · радиаторы · батареи · ДМ', color='#b8d0ef', size=8, side='right')
+leader(x1-80, ys[0]+r-18, x1-240, ys[0]+r+78, 'гладкая силовая оболочка', color='#b8d0ef', size=8)
+# length dimension
+L(x0, 810, x1, 810, FAINT, .8, z=20)
+L(x0,800,x0,820,FAINT,.8,z=20); L(x1,800,x1,820,FAINT,.8,z=20)
+T((x0+x1)/2,792,'49 км',size=8.4,color=DIM,ha='center')
 
-lead(xc+hl+CEND*K*0.4, yA+dyc+R*K*0.75, xc+hl-40, yA+dyc+R*K+92)
-T(xc+hl-36, yA+dyc+R*K+96, 'купол — полированная сталь', size=8)
-lead(hubs[+1][0], hubs[+1][2]+HUBR*K, xc+hl+330, yA+dyc+150)
-T(xc+hl+334, yA+dyc+154, 'подшипниковый узел на цапфе', size=8)
-lead((hubs[+1][0]+hubs[-1][0])/2, yA, (hubs[+1][0]+hubs[-1][0])/2+250, yA-40)
-T((hubs[+1][0]+hubs[-1][0])/2+254, yA-44,
-  'балка: узел — узел, поверхности не касается', size=8)
-lead(hubs[+1][1], hubs[+1][2]-HUBR*K*2.2, xc-hl-260, yA+dyc-150)
-T(xc-hl-256, yA+dyc-154, 'антенны — независимое наведение на Землю', size=8, ha='left')
+# B — front frame
+panel(1190, 720, 660, 640, 'B. ПЕРЕДНЯЯ РАМА · СТЫКОВКА',
+      'вид со стороны причала · два независимых входа, по одному на цилиндр')
+fx, fy1, fy2 = 1430, 1045, 865
+# frame plane, two separate shell endcaps
+for y in (fy1,fy2):
+    ax.add_patch(Circle((fx,y), 92, fc=STEEL, ec=STEEL_D, lw=1.1, zorder=8))
+    ax.add_patch(Circle((fx,y), 30, fc=GRAPH, ec=STEEL_L, lw=1, zorder=12))
+    ax.add_patch(Circle((fx,y), 12, fc=MAG, ec='none', zorder=13))
+# transverse stationary frame is drawn as a plane, not a longitudinal bridge
+L(fx, fy2-120, fx, fy1+120, GRAPH, 12, z=6)
+L(fx-12, fy2-120, fx-12, fy1+120, STEEL_L, 1, z=7)
+for y in (fy1,fy2):
+    for dy in (-44,44):
+        ax.add_patch(FancyBboxPatch((fx+34,y+dy-10),150,20, boxstyle='round,pad=0,rounding_size=7',
+                                    fc=DOCK, ec=STEEL_L, lw=.8, zorder=15))
+        T(fx+108,y+dy,'Ш',size=7,color=GRAPH,ha='center',weight='bold',z=16)
+    radiator_panel(fx-80,y+106,24,70); radiator_panel(fx-80,y-106,24,70)
+    solar_wing(fx+100,y+75,1,True,.9); solar_wing(fx+100,y-75,-1,True,.9)
+T(1218,1215,'КРАСНЫЕ',size=8,color=RAD_L,weight='bold')
+T(1218,1197,'радиаторы — только на раме',size=8,color=INK)
+T(1218,1162,'СИНИЕ',size=8,color=SOLAR_L,weight='bold')
+T(1218,1144,'солнечные крылья — поворотные',size=8,color=INK)
+leader(fx+185,fy1+44,1810,fy1+112,'2 независимых коридора → осевой вал',color='#b8d0ef',size=7.2,side='right')
+leader(fx,fy2-30,1240,fy2-100,'подшипник + мотор-генератор',color=POWER,size=8)
+T(1510,760,'Рама остаётся неподвижной.',size=8.4,color=SAFE,ha='center')
+T(1510,744,'Цилиндры вращаются независимо.',size=8.4,color=SAFE,ha='center')
 
-ax.add_line(Line2D([xc-hl-CEND*K, xc+hl+CEND*K],[yA-dyc-R*K-58]*2,
-                   color=FAINT,lw=0.8,zorder=20))
-for xx in (xc-hl-CEND*K, xc+hl+CEND*K):
-    ax.add_line(Line2D([xx,xx],[yA-dyc-R*K-52,yA-dyc-R*K-64],color=FAINT,
-                       lw=0.8,zorder=20))
-T(xc, yA-dyc-R*K-74, 'полная длина 49 км', size=8.4, color=DIM, ha='center')
+# C — transfer cross-section
+panel(50, 55, 880, 610, 'C. ПУТЬ ИЗ СТЫКОВКИ В ЦИЛИНДР',
+      'продольный разрез переднего торцевого узла; причал неподвижен')
+# axis from left (fixed frame) to right (rotor interior)
+yc=380
+# fixed docking hub
+ax.add_patch(FancyBboxPatch((105,yc-50),150,100,boxstyle='round,pad=0,rounding_size=18',fc=DOCK,ec=STEEL_L,lw=1,zorder=9))
+T(180,yc,'П',size=25,color=GRAPH,ha='center',weight='bold')
+# stationary airlocks
+for i in range(2):
+    xx=285+i*58
+    ax.add_patch(Rectangle((xx,yc-38),42,76,fc='#657381',ec=STEEL_L,lw=1,zorder=10))
+    L(xx+9,yc-30,xx+9,yc+30,STEEL_L,.7,z=12)
+# magnetic bearing housing
+ax.add_patch(Rectangle((420,yc-75),100,150,fc=GRAPH,ec=STEEL_L,lw=1,zorder=10))
+for yy in (yc-35,yc+35):
+    ax.add_patch(Rectangle((442,yy-10),56,20,fc=MAG,ec=STEEL_L,lw=.7,zorder=13))
+T(470,yc+95,'активный\nмагнитный подшипник',size=8,color='#9ee4ff',ha='center')
+# motor-generator
+ax.add_patch(Ellipse((570,yc),70,120,fc='#4d5966',ec=STEEL_L,lw=1,zorder=10))
+T(570,yc,'МГ',size=13,color=POWER,ha='center',weight='bold')
+# hollow axial shaft
+L(605,yc,780,yc,STEEL_L,22,z=10)
+L(605,yc,780,yc,GRAPH,12,z=11)
+# rotating seal
+ax.add_patch(Rectangle((620,yc-42),32,84,fc='#b88749',ec=STEEL_L,lw=1,zorder=14))
+T(636,yc+68,'вращающийся\nгермопереход',size=8,color='#ffd28a',ha='center')
+# front dome and shaft
+th=[math.pi*i/80 for i in range(81)]
+xx=[780+210*math.sin(t) for t in th]; yy=[yc+180*math.cos(t) for t in th]
+ax.add_patch(Polygon(list(zip(xx,yy))+[(780,yc-180)],closed=True,fc='#5f6d7a',ec=STEEL_L,lw=1,zorder=8))
+# inclined shafts inside dome
+for offset in (-26,26):
+    L(780,yc+offset,930,yc+offset*2.8,SAFE,7,z=13)
+    arrow(825,yc+offset*1.45,875,yc+offset*2.25,SAFE,1.1,z=18,ms=10)
+T(760,yc+215,'две наклонные шахты\nв передней полусфере',size=7.4,color='#a4e4b9',ha='center')
+T(180,190,'причал',size=8,color=INK,ha='center')
+T(320,190,'шлюзы',size=8,color=INK,ha='center')
+T(470,190,'опора',size=8,color=INK,ha='center')
+T(570,190,'мотор',size=8,color=INK,ha='center')
+T(700,190,'вал',size=8,color=INK,ha='center')
+T(855,190,'к жилой\nповерхности',size=8,color=INK,ha='center')
+# flow arrows
+for a,b in [(250,285),(385,420),(520,570),(605,620),(652,780)]: arrow(a,yc+120,b,yc+120,POWER,1.2,z=20,ms=11)
+T(470,120,'Герметичность обеспечивается шлюзами, вращающимся уплотнением и секционными гермодверями.',size=8.2,color=DIM,ha='center')
 
-# ════════════════════ ВИД B: СПЕРЕДИ ════════════════════
-T(1250,1330,'B.  ВИД СПЕРЕДИ (условное направление камеры)', size=13, w='bold')
-T(1250,1314,'видны носовые купола в панелях и балка между узлами',
-  size=8.4, color=DIM)
+# D — motion and power
+panel(960, 55, 890, 610, 'D. ВРАЩЕНИЕ И СИЛОВАЯ СХЕМА',
+      'рамы неподвижны; собственные двигатели — только на задней раме')
+# counter-rotating cylinders schematic
+cx, cy = 1175, 450
+for sy, col in [(cy+75,'#8095aa'),(cy-75,'#aeb9c5')]:
+    ax.add_patch(FancyBboxPatch((1035,sy-38),280,76,boxstyle='round,pad=0,rounding_size=38',fc=col,ec=STEEL_L,lw=.8,zorder=8))
+arrow(1100,cy+125,1230,cy+125, '#ffd28a',2,z=15,ms=14)
+arrow(1230,cy-125,1100,cy-125, '#ffd28a',2,z=15,ms=14)
+T(1175,cy+155,'два цилиндра вращаются встречно',size=9,color='#ffd28a',ha='center',weight='bold')
+# fixed frames
+for x in (990,1360):
+    L(x,cy-155,x,cy+155,STEEL_L,8,z=10)
+    L(x+8,cy-155,x+8,cy+155,GRAPH,4,z=11)
+T(990,cy+175,'передняя\nрама',size=8,color=INK,ha='center')
+T(1368,cy+175,'задняя рама:\nантенны + ДМ',size=8,color=INK,ha='center')
+# power bus
+T(1080,315,'РЕАКТОРНАЯ ШИНА',size=9,color=POWER,weight='bold')
+ax.add_patch(Rectangle((1080,285),220,24,fc='#715b2d',ec=POWER,lw=.8,zorder=8))
+arrow(1300,297,1395,297,POWER,1.5,z=15,ms=12)
+for j,(label,val) in enumerate([('магнитные подшипники','управление и удержание'),('мотор-генераторы','раскрутка / торможение'),('шахты и гермопереход','насосы и автоматика')]):
+    yy=235-j*45
+    ax.add_patch(FancyBboxPatch((1395,yy-16),350,32,boxstyle='round,pad=0,rounding_size=8',fc='#122b3d',ec='#4a89a8',lw=.8,zorder=8))
+    T(1410,yy,f'{label} · {val}',size=7.8,color=INK)
+    if j<2: arrow(1395,yy-20,1395,yy-27,POWER,1,z=14,ms=8)
+T(1080,98,'Квота узлов вращения, приводов и силовой электроники: 2 ГВт.',size=8.4,color=DIM)
+T(1080,80,'Реакторы → неподвижные рамы; солнечные крылья — резервный источник.',size=8.4,color=DIM)
+# station movement
+T(1080,60,'Перемещение: задние сопла → тяга через цапфы и опоры.',size=8.2,color=SAFE)
 
-KB=0.0092
-xB,yB=1510.,1120.
-rB=R*KB; dB=GAPAX*KB/2
-for s in (+1,-1):
-    yy=yB+s*dB
-    ax.add_patch(Circle((xB,yy), rB, fc=SOLAR, ec=STEEL_D, lw=1.1, zorder=8))
-    for k in range(1,5):
-        ax.add_patch(Circle((xB,yy), rB*k/5, fc='none', ec=GRID, lw=0.5,
-                            alpha=.5, zorder=9))
-    for k in range(12):
-        a=math.radians(k*30)
-        ax.add_line(Line2D([xB,xB+rB*math.cos(a)],[yy,yy+rB*math.sin(a)],
-                           color=GRID,lw=0.5,alpha=.5,zorder=9))
-    ax.add_patch(Circle((xB,yy), max(HUBR*KB,4.5), fc=HUB, ec=STEEL_L,
-                        lw=0.9, zorder=14))
-    for i in range(3):
-        an=math.radians(90+i*120)
-        ax.add_patch(Polygon([[xB+math.cos(an)*rB*0.28, yy+math.sin(an)*rB*0.28],
-                              [xB+math.cos(an+0.30)*rB*1.34, yy+math.sin(an+0.30)*rB*1.34],
-                              [xB+math.cos(an-0.30)*rB*1.34, yy+math.sin(an-0.30)*rB*1.34]],
-                             closed=True, fc=RADC, ec=RADG, lw=0.5,
-                             alpha=.9, zorder=7))
-truss(xB, yB+dB, xB, yB-dB, KB, seg=9)
-T(xB, yB+dB+rB+40, 'радиаторы — лучами от узла', size=8, color='#e8a58a',
-  ha='center')
-T(xB, yB-dB-rB-46, 'балка соединяет только узлы', size=8, color=DIM,
-  ha='center')
-T(xB+rB+60, yB, 'крылья батарей\nна узлах —\nповоротные', size=8.2,
-  color='#9fc4ff')
-
-# ════════════════════ ВИД C: УЗЕЛ КРУПНО ════════════════════
-T(60,850,'C.  УЗЕЛ: ЦАПФА — ПОДШИПНИК — БАЛКА', size=13, w='bold')
-T(60,889,'вынесено; корпус слева, узел не вращается', size=8.4, color=DIM)
-
-KC=0.019
-xCv,yCv=250.,650.
-rC=R*KC
-ax.add_patch(Wedge((xCv,yCv), CEND*KC*1.6, -90, 90, fc=SOLAR, ec=STEEL_D,
-                   lw=1.0, zorder=8))
-for k in range(1,6):
-    ax.add_patch(Arc((xCv,yCv), 2*CEND*KC*1.6*k/6, 2*rC*k/6,
-                     theta1=-90, theta2=90, color=GRID, lw=0.6, alpha=.6,
-                     zorder=9))
-axl=AXLEN*KC; axr=AXR*KC
-ax.add_patch(Rectangle((xCv, yCv-axr), axl, 2*axr, fc=STEEL_D, ec=STEEL_L,
-                       lw=0.8, zorder=11))
-hx=xCv+axl
-HR=HUBR*KC; HW=HUBW*KC
-ax.add_patch(Rectangle((hx-HW/2, yCv-HR), HW, 2*HR, fc=HUB, ec=STEEL_L,
-                       lw=1.0, zorder=13))
-for k in range(7):
-    a=math.radians(k*51)
-    ax.add_patch(Circle((hx, yCv+HR*0.62*math.sin(a)), HR*0.13,
-                        fc='#39424e', ec=STEEL_L, lw=0.5, zorder=14))
-ax.add_patch(Circle((hx,yCv), HR*0.42, fc='#2b333d', ec=STEEL_L, lw=0.8,
-                    zorder=15))
-truss(hx+HW/2, yCv, hx+HW/2+330, yCv, KC, seg=11)
-for i in range(3):
-    ax.add_patch(Rectangle((hx+HW*0.8, yCv+(i-1)*HR*0.85-HR*0.18),
-                           HR*1.5, HR*0.36, fc=DOCK, ec=STEEL_L, lw=0.6,
-                           zorder=15))
-lead(xCv+axl*0.5, yCv+axr, xCv+30, yCv+120)
-T(xCv+34, yCv+124, 'цапфа: вылет 6 км, Ø 520 м', size=8)
-lead(hx, yCv+HR, hx+20, yCv+165)
-T(hx+24, yCv+169, 'подшипниковый узел — не вращается', size=8)
-lead(hx+HW*1.6, yCv+HR*0.9, hx+150, yCv-150)
-T(hx+154, yCv-154, 'модули стыковки', size=8)
-lead(hx+HW/2+150, yCv, hx+200, yCv-95)
-T(hx+204, yCv-99, 'балка к соседнему узлу', size=8)
-lead(xCv+CEND*KC*1.1, yCv-rC*0.55, xCv+60, yCv-215)
-T(xCv+64, yCv-219, 'купол цилиндра', size=8)
-
-# ════════════════════ ВИД D: СЛЕЖЕНИЕ ЗА СОЛНЦЕМ ════════════════════
-T(860,850,'D.  ОРИЕНТАЦИЯ В ТЕЧЕНИЕ ГОДА', size=13, w='bold')
-T(860,834,'ось неподвижна (п. 11.6), Солнце обходит станцию за год',
-  size=8.4, color=DIM)
-
-ox,oy,ORB=1140.,640.,132.
-ax.add_patch(Circle((ox,oy), 26, fc='#ffd98a', ec='#ffb347', lw=1.2,
-                    zorder=12))
-T(ox,oy,'Солнце',size=7.6,ha='center',color='#3a2a08',w='bold',z=13)
-ax.add_patch(Circle((ox,oy), ORB, fc='none', ec='#33465f', lw=0.9,
-                    ls=(0,(5,4)), zorder=6))
-for k,(a,lab) in enumerate([(0,'весна'),(90,'лето'),(180,'осень'),(270,'зима')]):
-    A=math.radians(a)
-    sxp,syp=ox+ORB*math.cos(A), oy+ORB*math.sin(A)
-    for s in (+1,-1):
-        ax.add_patch(Ellipse((sxp, syp+s*9), 34, 12, angle=0,
-                             fc=STEEL, ec=STEEL_D, lw=0.6, zorder=10))
-        # носовой купол всегда СПРАВА (ось неподвижна)
-        ax.add_patch(Wedge((sxp+17, syp+s*9), 7, -90, 90, fc=SOLAR,
-                           ec='none', zorder=11))
-    ax.add_line(Line2D([sxp,ox],[syp,oy],color='#ffd98a',lw=0.6,
-                       alpha=.35,zorder=7))
-    T(sxp, syp+30, lab, size=7.4, color=DIM, ha='center')
-T(ox, oy-ORB-56,
-  'Ось станции не поворачивается: разворот требовал бы 2,41·10¹² Н·м.',
-  size=8, color=DIM, ha='center')
-T(ox, oy-ORB-70,
-  'За год направление Солнца в корпусной системе проходит полный оборот.', size=8,
-  color=DIM, ha='center')
-T(ox, oy-ORB-86,
-  'ПОЭТОМУ КРЫЛЬЯ БАТАРЕЙ ПОВОРОТНЫЕ: привод на узле наводит их',
-  size=8.4, color='#9fc4ff', ha='center', w='bold')
-T(ox, oy-ORB-100,
-  'на светило круглый год; корпус станции при этом не поворачивается.', size=8.4,
-  color='#9fc4ff', ha='center', w='bold')
-
-# ════════════════════ СВОДКА ════════════════════
-ax.add_line(Line2D([60,1840],[300,300],color='#22334d',lw=1.0,zorder=5))
-T(60,272,'СОЛНЕЧНЫЕ БАТАРЕИ (п. 7.7)', size=10, w='bold', color='#9fd0ff')
-for i,(k,v) in enumerate([
-    ('поворотные крылья','586,8 км² · по 146,7 км² на узел'),
-    ('исполнение','складные секции, шарнир 2 степени свободы'),
-    ('мощность при КПД 25 %','53,4 ГВт = 7,41 % станции'),
-    ('масса при 2 кг/м²','1,17 млн т = 0,0025 % массы'),
-    ('деградация','0,5 %/год: 88 % через 25 лет, 61 % через 100'),
-    ('привод наведения','0,986 °/сут — оборот за год')]):
-    T(60, 246-i*17, k, size=8, color=DIM)
-    T(330, 246-i*17, v, size=8, color=INK)
-
-T(980,272,'КОНСТРУКЦИЯ УЗЛА', size=10, w='bold', color='#9fd0ff')
-for i,(k,v) in enumerate([
-    ('цапфа','выходит из купола по оси вращения'),
-    ('подшипниковый узел','магнитная опора · мотор-генератор · статор на раме'),
-    ('балка','соединяет узлы; поверхности не касается'),
-    ('передний торец','стыковка · радиаторы · крылья батарей'),
-    ('задний торец','антенны · радиаторы · батареи · двигатели'),
-    ('станция','2 цилиндра · 49 км · 46,70 млрд т · L1')]):
-    T(980, 246-i*17, k, size=8, color=DIM)
-    T(1250, 246-i*17, v, size=8, color=INK)
-
-T(1840,60,'Бугаенко Р. С. · НИК   ·   ред. 7.0, 08.09.2026   ·   '
-          'verify_all.py 243/243', size=8, color=FAINT, ha='right')
+# footer
+L(58,38,1842,38,'#263c56',1)
+T(58,18,"ММОСО'Н · ред. 7.0 · 09.09.2026 · внешние узлы только на рамах · verify_all.py 243/243",size=7.8,color=FAINT)
+T(1840,18,'не масштабная схема · размеры и расчёты — в MMOSON_v7.docx',size=7.8,color=FAINT,ha='right')
 
 fig.savefig('station_views.png', dpi=150, facecolor=BG)
 print('station_views.png сохранён')
