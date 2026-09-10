@@ -73,10 +73,10 @@ def dim_h(s, x1, x2, y, label, ext=None):
 def sheet1_assembly():
     s = Sheet('A1', title='Передний торцевой узел.\nСборочный чертёж',
               material='Сталь 18Ni(300)', scale='см. виды',
-              number='ММОСО.01.930 СБ', mass='—', sheet_no='1', sheets='3',
+              number='ММОСО.01.930 СБ', mass='—', sheet_no='2', sheets='5',
               lit='П', date='10.09.2026')
     A = s.ax
-    header(s, 'ЛИСТ 1. ПЕРЕДНИЙ ТОРЦЕВОЙ УЗЕЛ — СБОРКА И ПРОДОЛЬНЫЙ РАЗРЕЗ',
+    header(s, 'ЛИСТ 2. ПЕРЕДНИЙ ТОРЦЕВОЙ УЗЕЛ — СБОРКА И ПРОДОЛЬНЫЙ РАЗРЕЗ',
            'Главный вид — разрез А–А одного цилиндра. Второй цилиндр имеет независимый аналогичный узел.')
 
     # MAIN LONGITUDINAL SECTION: physically drawn walls, sections, and corridor tubes.
@@ -196,9 +196,9 @@ def sheet1_assembly():
 
 def sheet2_bearing_and_corridor():
     s=Sheet('A1',title='Транспортный коридор.\nДеталировка и сечения',material='Сталь 18Ni(300) / YBCO',
-            scale='см. виды',number='ММОСО.01.940 СБ',mass='—',sheet_no='2',sheets='3',lit='П',date='10.09.2026')
+            scale='см. виды',number='ММОСО.01.940 СБ',mass='—',sheet_no='3',sheets='5',lit='П',date='10.09.2026')
     A=s.ax
-    header(s,'ЛИСТ 2. ДЕТАЛИРОВКА ТРАНСПОРТНОГО КОРИДОРА И ПОДШИПНИКОВОГО УЗЛА',
+    header(s,'ЛИСТ 3. ДЕТАЛИРОВКА ТРАНСПОРТНОГО КОРИДОРА И ПОДШИПНИКОВОГО УЗЛА',
           'Разрезы показывают реальные стенки, гермодвери, вал и опорные элементы; стрелки только указывают направление движения.')
     # Top main section of one corridor through fixed/rotating interface.
     y=375
@@ -282,9 +282,9 @@ def sheet2_bearing_and_corridor():
 
 def sheet3_dome():
     s=Sheet('A1',title='Цилиндр.\nПередняя полусфера и выходы шахт',material='Сталь 18Ni(300)',
-            scale='см. виды',number='ММОСО.01.950 СБ',mass='—',sheet_no='3',sheets='3',lit='П',date='10.09.2026')
+            scale='см. виды',number='ММОСО.01.950 СБ',mass='—',sheet_no='4',sheets='5',lit='П',date='10.09.2026')
     A=s.ax
-    header(s,'ЛИСТ 3. ЦИЛИНДР — ПЕРЕДНЯЯ ПОЛУСФЕРА, ШАХТЫ И ВЫХОД НА ЖИЛУЮ ПОВЕРХНОСТЬ',
+    header(s,'ЛИСТ 4. ЦИЛИНДР — ПЕРЕДНЯЯ ПОЛУСФЕРА, ШАХТЫ И ВЫХОД НА ЖИЛУЮ ПОВЕРХНОСТЬ',
           'Разрез показывает внутреннюю геометрию вращающейся передней полусферы; внешняя оболочка остаётся гладкой.')
     # large side section of the front hemisphere
     cx,cy=245,335
