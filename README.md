@@ -50,17 +50,9 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 ### Автор
 
-**Бугаенко Роман Сергеевич** — независимый автор и руководитель личного инженерного и научно-исследовательского проекта.
+**Бугаенко Роман Сергеевич** — независимый автор и руководитель личного инженерного и научно-исследовательского проекта ММОСО’Н.
 
-Опыт и направления деятельности:
-
-- IT-экспертиза и тестирование цифровых продуктов: участие в программе «Эксперты ВКонтакте», программе «VK Testers» с подготовкой 17 отчётов о багах и программе «VK Crowd»;
-- картография: модерация и экспертная проверка слоя «Растительность» в Народной карте Яндекса;
-- медиа и творческие проекты: обучение в медиашколе «ДЮйМ», SMM-работа для культурных и кинопроектов;
-- общественная и волонтёрская деятельность, включая работу с Движением Первых, Российским Красным Крестом и Центром детского творчества;
-- дополнительная подготовка по веб-программированию, английскому языку и подготовке к ЕГЭ.
-
-В рамках ММОСО’Н автор занимается концепцией и архитектурой станции, климатическим зонированием, составом биоценозов, инженерными решениями, продовольственным и водным балансами.
+В рамках проекта автор занимается концепцией и архитектурой станции, климатическим зонированием, составом биоценозов, инженерными решениями, продовольственным и водным балансами.
 
 **НИК** (Нить искренности в Континууме) — расчётная верификация, пересчёт прочности и балансов, оформление документа и чертежей.
 
@@ -120,15 +112,7 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 ### Author
 
-**Roman Sergeevich Bugaenko** is an independent author and the lead of this personal engineering and research project.
-
-His experience and areas of work include:
-
-- IT expertise and digital-product testing: participation in the VK Experts programme, the VK Testers programme with 17 bug reports, and the VK Crowd programme;
-- cartography: moderation and expert review of the Vegetation layer in Yandex People’s Map;
-- media and creative projects: study at the DYuM media school and SMM work for cultural and film projects;
-- public and volunteer activity, including work with the Movement of the First, the Russian Red Cross and the Centre for Children’s Creativity;
-- additional training in web programming, English and university entrance examination preparation.
+**Roman Sergeevich Bugaenko** is an independent author and the lead of the personal MMOSON engineering and research project.
 
 Within MMOSON, the author works on the station concept and architecture, climate zoning, biocenosis composition, engineering solutions, and food and water balances.
 
