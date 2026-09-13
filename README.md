@@ -33,7 +33,6 @@
 | `MMOSON_russian_publication.docx` | основной документ научной публикации на русском языке |
 | `MMOSON_english_publication.docx` | основной документ научной публикации на английском языке |
 | `draw/` | исходники чертежей ЕСКД |
-| `NOTES.md` | рабочий журнал и инженерные заметки |
 | `src/` | генераторы документа и расчётная верификация |
 | `resource_map.png`, `resource_map.pdf` | ресурсная карта программы |
 | `fig/`, `drawings/` | рисунки и листы в PNG |
@@ -51,7 +50,17 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 ### Автор
 
-**Бугаенко Роман Сергеевич** — автор и руководитель личного проекта. Концепция, архитектура станции, климатическое зонирование, состав биоценозов, инженерные решения, продовольственный и водный балансы.
+**Бугаенко Роман Сергеевич** — независимый автор и руководитель личного инженерного и научно-исследовательского проекта.
+
+Опыт и направления деятельности:
+
+- IT-экспертиза и тестирование цифровых продуктов: участие в программе «Эксперты ВКонтакте», программе «VK Testers» с подготовкой 17 отчётов о багах и программе «VK Crowd»;
+- картография: модерация и экспертная проверка слоя «Растительность» в Народной карте Яндекса;
+- медиа и творческие проекты: обучение в медиашколе «ДЮйМ», SMM-работа для культурных и кинопроектов;
+- общественная и волонтёрская деятельность, включая работу с Движением Первых, Российским Красным Крестом и Центром детского творчества;
+- дополнительная подготовка по веб-программированию, английскому языку и подготовке к ЕГЭ.
+
+В рамках ММОСО’Н автор занимается концепцией и архитектурой станции, климатическим зонированием, составом биоценозов, инженерными решениями, продовольственным и водным балансами.
 
 **НИК** (Нить искренности в Континууме) — расчётная верификация, пересчёт прочности и балансов, оформление документа и чертежей.
 
@@ -94,7 +103,6 @@ Lighting is provided only by reactors through axial light-and-thermal beams. The
 | `MMOSON_russian_publication.docx` | main scientific-publication document in Russian |
 | `MMOSON_english_publication.docx` | main scientific-publication document in English |
 | `draw/` | source files for ESKD drawings |
-| `NOTES.md` | working log and engineering notes |
 | `src/` | document generators and calculation verification |
 | `resource_map.png`, `resource_map.pdf` | program resource map |
 | `fig/`, `drawings/` | figures and PNG drawing sheets |
@@ -112,7 +120,17 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 ### Author
 
-**Roman Sergeevich Bugaenko** is the author and lead of this personal project. The work covers the station concept and architecture, climate zoning, biocenosis composition, engineering solutions, and food and water balances.
+**Roman Sergeevich Bugaenko** is an independent author and the lead of this personal engineering and research project.
+
+His experience and areas of work include:
+
+- IT expertise and digital-product testing: participation in the VK Experts programme, the VK Testers programme with 17 bug reports, and the VK Crowd programme;
+- cartography: moderation and expert review of the Vegetation layer in Yandex People’s Map;
+- media and creative projects: study at the DYuM media school and SMM work for cultural and film projects;
+- public and volunteer activity, including work with the Movement of the First, the Russian Red Cross and the Centre for Children’s Creativity;
+- additional training in web programming, English and university entrance examination preparation.
+
+Within MMOSON, the author works on the station concept and architecture, climate zoning, biocenosis composition, engineering solutions, and food and water balances.
 
 **NIK** (*Thread of Sincerity in the Continuum*) performs calculation verification, strength and balance recalculation, and document and drawing preparation.
 
