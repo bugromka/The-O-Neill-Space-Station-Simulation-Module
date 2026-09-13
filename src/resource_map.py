@@ -3,16 +3,15 @@
 
 Строится по реальным элементам орбит (JPL SBDB). В отличие от рисунка 22,
 входящего в документ, здесь:
-  * формат A1-альбом (841 x 594 мм), 300 dpi — печать и рассматривание вблизи;
+  * формат A3-альбом (420 x 297 мм), 300 dpi — один читаемый печатный лист;
   * звёздное поле и реалистичная светотень тел;
-  * пояс астероидов — не серое кольцо, а облако из тысяч точек
-    с распределением по большой полуоси и щелями Кирквуда;
-  * орбиты с учётом наклонения (проекция на эклиптику даёт видимое сжатие);
-  * тела показаны в масштабе диаметров с отдельной шкалой;
-  * таблица характеристик и таблица потребности проекта.
+  * пояс астероидов — облако точек с распределением по большой полуоси;
+  * орбиты с учётом наклонения;
+  * ресурсные тела отмечены номерами, а их параметры вынесены в крупную правую легенду;
+  * таблица потребности проекта рассчитана на A3 без мелкого постерного текста.
 
 Запуск:  python3 resource_map.py
-Выход:   resource_map.png  (и resource_map.pdf)
+Выход:   ../resource_map.png  (и ../resource_map.pdf)
 """
 import os
 import math
@@ -30,7 +29,7 @@ matplotlib.rcParams.update({
     'savefig.dpi': 300,
 })
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── палитра «ночного неба» ──────────────────────────────────────────────
 BG      = '#070b14'      # фон космоса
@@ -250,290 +249,179 @@ def fade_orbit(ax, x, y, color, lw=1.5, zorder=5, n_seg=180):
 
 
 def build():
-    # A2 альбом: 594 x 420 мм
-    fig = plt.figure(figsize=(841 / 25.4, 594 / 25.4), facecolor=BG)
+    """Собирает карту в формате A3, альбомная ориентация.
 
-    # ── ГЛАВНОЕ ПОЛЕ ────────────────────────────────────────────────
-    ax = fig.add_axes([0.030, 0.052, 0.605, 0.878])
+    Компоновка специально рассчитана на один печатный лист A3:
+    крупное поле орбит слева, короткая читаемая легенда и таблица
+    ресурсов справа. Мелкие пояснительные абзацы A1-версии удалены.
+    """
+    # A3 landscape: 420 x 297 mm. Text sizes below are chosen for a printed page,
+    # not for a zoomed-in A1 poster.
+    fig = plt.figure(figsize=(420 / 25.4, 297 / 25.4), facecolor=BG)
+
+    # ── Орбитальная карта ─────────────────────────────────────────────
+    ax = fig.add_axes([0.035, 0.155, 0.585, 0.745])
     ax.set_facecolor(BG)
-    LIM = 6.60
-    ax.set_xlim(-LIM, LIM)
-    ax.set_ylim(-LIM * 420 / 594 * (0.878 / 0.605) * 0.605 / 0.605, LIM)
-    ax.set_xlim(-LIM, LIM)
-    ax.set_ylim(-5.95, 5.95)
+    xlim, ylim = (-5.82, 5.82), (-5.20, 5.20)
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
     ax.set_aspect('equal')
     ax.axis('off')
 
-    draw_starfield(ax, (-LIM, LIM), (-5.05, 5.05))
-    draw_belt(ax)
+    draw_starfield(ax, xlim, ylim, n=1100, seed=7)
+    draw_belt(ax, n=6000, seed=3)
 
-    # кольца-масштаб
-    for rr in range(1, 7):
-        ax.add_patch(Circle((0, 0), rr, fc='none', ec=GRID, lw=0.6,
+    # Масштабные кольца в а.е.
+    for rr in range(1, 6):
+        ax.add_patch(Circle((0, 0), rr, fc='none', ec=GRID, lw=0.55,
                             ls=(0, (2, 4)), zorder=3))
-        ax.text(rr * 0.7071 + 0.04, -rr * 0.7071 - 0.04, f'{rr}',
-                fontsize=7.0, color='#4a5878', ha='left', va='top',
-                zorder=3)
-    ax.text(6.42, -5.05, 'кольца — расстояние от Солнца, а.е.',
-            fontsize=7.4, color='#4a5878', ha='right', style='italic')
+        ax.text(rr * 0.7071 + 0.035, -rr * 0.7071 - 0.04, f'{rr} а.е.',
+                fontsize=6.4, color='#4a5878', ha='left', va='top', zorder=3)
 
-    # орбиты планет — сплошные, заметные, с подписью вдоль кривой
+    # Планетные орбиты и планеты.
     for name, a, e, om, i, c, Rm, nu0 in PLANETS:
         x, y = orbit_xy(a, e, om, i)
-        ax.plot(x, y, color=c, lw=1.9, alpha=0.85, zorder=4)
-        ax.plot(x, y, color=c, lw=5.5, alpha=0.10, zorder=3)   # мягкое свечение
-        # подпись орбиты у левого края кривой
-        k = int(len(x) * 0.50)
-        ang = math.degrees(math.atan2(y[k + 6] - y[k - 6], x[k + 6] - x[k - 6]))
-        if ang > 90:
-            ang -= 180
-        if ang < -90:
-            ang += 180
-        ax.text(x[k], y[k], f' орбита {name} ', fontsize=8.0, color=c,
-                ha='center', va='center', rotation=ang, alpha=0.95,
-                rotation_mode='anchor',
-                bbox=dict(fc=BG, ec='none', pad=0.9), zorder=5)
-    # планеты — тела
-    for name, a, e, om, i, c, R, nu in PLANETS:
-        px, py = point_at(a, e, om, nu, i)
-        shaded_body(ax, px, py, R, c, zorder=12)
-        ax.text(px, py - R - 0.19, name, fontsize=9.2, color=c,
+        ax.plot(x, y, color=c, lw=1.45, alpha=0.90, zorder=4)
+        ax.plot(x, y, color=c, lw=4.0, alpha=0.08, zorder=3)
+        px, py = point_at(a, e, om, nu0, i)
+        shaded_body(ax, px, py, Rm, c, zorder=12)
+        ax.text(px, py - Rm - 0.17, name, fontsize=7.3, color=c,
                 ha='center', va='top', weight='bold',
-                path_effects=[pe.withStroke(linewidth=2.6, foreground=BG)])
+                path_effects=[pe.withStroke(linewidth=2.0, foreground=BG)])
 
-    # Солнце
-    for k, aa in ((7.0, 0.028), (4.6, 0.05), (3.0, 0.09),
-                  (2.0, 0.16), (1.4, 0.28)):
-        ax.add_patch(Circle((0, 0), 0.115 * k, fc=SUN, ec='none',
+    # Солнце.
+    for k, aa in ((5.8, 0.028), (3.8, 0.05), (2.4, 0.10), (1.5, 0.20)):
+        ax.add_patch(Circle((0, 0), 0.105 * k, fc=SUN, ec='none',
                             alpha=aa, zorder=6))
-    ax.add_patch(Circle((0, 0), 0.125, fc='#fff3c4', ec='none', zorder=8))
-    ax.add_patch(Circle((0, 0), 0.098, fc='#ffffff', ec='none', zorder=9))
-    ax.text(0, -0.30, 'Солнце', fontsize=8.6, color=SUN, ha='center',
+    ax.add_patch(Circle((0, 0), 0.105, fc='#fff3c4', ec='none', zorder=8))
+    ax.add_patch(Circle((0, 0), 0.082, fc='#ffffff', ec='none', zorder=9))
+    ax.text(0, -0.25, 'Солнце', fontsize=7.2, color=SUN, ha='center',
             va='top', weight='bold',
-            path_effects=[pe.withStroke(linewidth=2.6, foreground=BG)])
+            path_effects=[pe.withStroke(linewidth=2.0, foreground=BG)])
 
-    # орбиты и тела ресурсных объектов
-    # ВАЖНО: тело показывается НЕ в перигелии, иначе шар накрывает метку
-    # перигелия и та становится невидимой. Тело ставится на текущее
-    # положение по орбите, перигелий и афелий отмечаются отдельно.
-    BODY_NU = {'1': 300, '2': 205, '3': 60, '4': 145, '5': 250}
+    # Орбиты ресурсных тел и точки перигелия/афелия.
+    # Текущие положения самих тел намеренно не наносятся: карта показывает
+    # типовые орбитальные параметры, а диаметры вынесены в правую легенду.
     for m, name, a, e, om, i, dkm, c, role in TARGETS:
         x, y = orbit_xy(a, e, om, i)
-        fade_orbit(ax, x, y, c, lw=2.2, zorder=7)
-
-        # ── метка перигелия: залитый кружок с белым ободком ──
+        ax.plot(x, y, color=c, lw=1.55, alpha=0.88, zorder=7)
         px, py = perihelion_xy(a, e, om, i)
-        ax.plot([px], [py], marker='o', ms=8.5, color=c, zorder=13,
-                markeredgecolor='white', markeredgewidth=1.3)
-        # ── метка афелия: косой крест ──
+        ax.plot([px], [py], marker='o', ms=6.3, color=c, zorder=13,
+                markeredgecolor='white', markeredgewidth=0.9)
         qx, qy = point_at(a, e, om, 180, i)
-        ax.plot([qx], [qy], marker='x', ms=8.0, mew=2.0, color=c,
+        ax.plot([qx], [qy], marker='x', ms=6.0, mew=1.45, color=c,
                 zorder=13, alpha=0.95)
 
-        # ── само тело в стороне от обеих меток ──
-        bx, by = point_at(a, e, om, BODY_NU[m], i)
-        R = 0.062 + 0.085 * math.log10(max(dkm, 1.0)) / 3.0
-        shaded_body(ax, bx, by, R, c, zorder=14)
-        d = math.hypot(bx, by) or 1
-        ox, oy = bx / d * (R + 0.34), by / d * (R + 0.34)
-        ax.text(bx + ox, by + oy, m, fontsize=10.0, weight='bold',
-                color=BG, ha='center', va='center', zorder=16,
-                bbox=dict(boxstyle='circle,pad=0.32', fc=c, ec='none'))
-
-    # станция в L1
+    # Станция в точке L1.
     ex, ey = point_at(1.0, 0.0167, 102.9, 25, 0.0)
     d = math.hypot(ex, ey)
     sx, sy = ex * (1 - 0.010 / d), ey * (1 - 0.010 / d)
-    ax.plot([sx], [sy], marker='s', ms=7.0, color=C_ST, zorder=17,
-            markeredgecolor='white', markeredgewidth=0.7)
-    ax.annotate('станция ММОСО′Н\nточка L1, 1,5 млн км от Земли',
-                xy=(sx, sy), xytext=(2.35, 2.62),
-                fontsize=8.4, color=C_ST, ha='left', va='center',
-                weight='bold',
-                path_effects=[pe.withStroke(linewidth=2.6, foreground=BG)],
-                arrowprops=dict(arrowstyle='-', lw=0.9, color=C_ST,
-                                alpha=0.8,
-                                connectionstyle='arc3,rad=-0.22'))
+    ax.plot([sx], [sy], marker='s', ms=5.5, color=C_ST, zorder=17,
+            markeredgecolor='white', markeredgewidth=0.55)
+    ax.annotate('станция ММОСО′Н\nL1: 1,5 млн км от Земли',
+                xy=(sx, sy), xytext=(2.18, 2.18), fontsize=7.0,
+                color=C_ST, ha='left', va='center', weight='bold',
+                path_effects=[pe.withStroke(linewidth=2.0, foreground=BG)],
+                arrowprops=dict(arrowstyle='-', lw=0.75, color=C_ST,
+                                alpha=0.8, connectionstyle='arc3,rad=-0.20'))
 
-    # подпись пояса
-    ax.text(-3.42, 1.72, 'ГЛАВНЫЙ ПОЯС АСТЕРОИДОВ', fontsize=8.6,
+    ax.text(-3.25, 1.63, 'ГЛАВНЫЙ ПОЯС АСТЕРОИДОВ', fontsize=7.0,
             color='#7f8fa8', rotation=-30, ha='center', style='italic',
-            path_effects=[pe.withStroke(linewidth=2.6, foreground=BG)])
-    ax.text(-4.72, -2.95, 'троянцы\nЮпитера', fontsize=7.4,
+            path_effects=[pe.withStroke(linewidth=2.0, foreground=BG)])
+    ax.text(-4.62, -2.78, 'троянцы\nЮпитера', fontsize=6.5,
             color='#7f8fa8', ha='center', style='italic',
-            path_effects=[pe.withStroke(linewidth=2.4, foreground=BG)])
+            path_effects=[pe.withStroke(linewidth=1.8, foreground=BG)])
+    ax.text(-5.72, 5.06, 'ОРБИТАЛЬНАЯ КАРТА РЕСУРСНЫХ ТЕЛ', fontsize=11.5,
+            color=FG, weight='bold', ha='left', va='top')
 
-    ax.text(1.05, -5.62,
-            'Плоскость эклиптики, вид с северного полюса мира. '
-            'Орбиты показаны с учётом наклонения — отсюда видимое сжатие.',
-            fontsize=8.2, color=FG_DIM, va='center', linespacing=1.55)
-
-    # ── КЛЮЧ УСЛОВНЫХ ОБОЗНАЧЕНИЙ (врезка в поле карты) ──────────────
-    kx, ky = -LIM + 0.16, 5.82          # левый верхний угол врезки
-    kw, kh = 3.60, 1.52
+    # Компактная легенда в левом верхнем секторе.
+    kx, ky, kw, kh = -5.68, 4.66, 3.35, 0.78
     ax.add_patch(Rectangle((kx, ky - kh), kw, kh, fc='#0b1120', ec=GRID,
-                           lw=0.9, alpha=0.92, zorder=20))
-    ax.text(kx + 0.13, ky - 0.19, 'УСЛОВНЫЕ ОБОЗНАЧЕНИЯ', fontsize=8.4,
+                           lw=0.75, alpha=0.94, zorder=20))
+    ax.text(kx + 0.13, ky - 0.17, 'ОБОЗНАЧЕНИЯ', fontsize=7.3,
             color=FG, weight='bold', va='center', zorder=21)
-    _ky = ky - 0.52
-    # перигелий
-    ax.plot([kx + 0.29], [_ky], marker='o', ms=9.5, color=FG_DIM, zorder=21,
-            markeredgecolor='white', markeredgewidth=1.3)
-    ax.text(kx + 0.56, _ky, 'перигелий — ближайшая к Солнцу точка орбиты',
-            fontsize=8.0, color=FG_DIM, va='center', zorder=21)
-    _ky -= 0.34
-    # афелий
-    ax.plot([kx + 0.29], [_ky], marker='x', ms=9.0, mew=2.0, color=FG_DIM,
-            zorder=21)
-    ax.text(kx + 0.56, _ky, 'афелий — наиболее удалённая точка орбиты',
-            fontsize=8.0, color=FG_DIM, va='center', zorder=21)
-    _ky -= 0.34
-    # тело
-    shaded_body(ax, kx + 0.29, _ky, 0.115, FG_DIM, sun_dir=(-1, 0.25),
-                zorder=21, glow=False)
-    ax.text(kx + 0.56, _ky, 'само тело: положение на орбите, размер условен',
-            fontsize=8.0, color=FG_DIM, va='center', zorder=24)
+    rows = [(ky - 0.39, 'o', 'перигелий'),
+            (ky - 0.61, 'x', 'афелий')]
+    for yy, mark, label in rows:
+        if mark == 'o':
+            ax.plot([kx + 0.22], [yy], marker='o', ms=6, color=FG_DIM,
+                    markeredgecolor='white', markeredgewidth=0.8, zorder=21)
+        elif mark == 'x':
+            ax.plot([kx + 0.22], [yy], marker='x', ms=6, mew=1.4,
+                    color=FG_DIM, zorder=21)
+        ax.text(kx + 0.40, yy, label, fontsize=6.6, color=FG_DIM,
+                va='center', zorder=21)
 
-    # ── ПРАВАЯ КОЛОНКА ──────────────────────────────────────────────
-    lg = fig.add_axes([0.652, 0.052, 0.325, 0.878])
+    # ── Правая колонка: крупная легенда и компактная таблица ─────────
+    lg = fig.add_axes([0.645, 0.155, 0.322, 0.745])
     lg.set_facecolor(BG)
-    lg.set_xlim(0, 1)
-    lg.set_ylim(0, 1)
-    lg.axis('off')
-
-    lg.text(0, 1.0, 'РЕСУРСНАЯ БАЗА ПРОГРАММЫ', fontsize=15.5,
+    lg.set_xlim(0, 1); lg.set_ylim(0, 1); lg.axis('off')
+    lg.text(0, 1.0, 'РЕСУРСНАЯ БАЗА ПРОГРАММЫ', fontsize=13.2,
             weight='bold', color=FG, va='top')
-    lg.text(0, 0.968, 'Модуль моделирования орбитальной станции О′Нилла',
-            fontsize=8.6, color=FG_DIM, va='top')
-    lg.plot([0, 1], [0.951, 0.951], color=GRID, lw=1.1)
+    lg.text(0, 0.956, 'Пять источников · расстояния в а.е. · диаметры тел условны на карте',
+            fontsize=7.3, color=FG_DIM, va='top')
+    lg.plot([0, 1], [0.930, 0.930], color=GRID, lw=0.9)
 
-    y = 0.930
+    y = 0.905
     info = [
-        (C_METAL, '1', '(6178) 1986 DA', 'металл — определяющий ресурс',
-         ['M-тип · Ø ≈ 3,0 км · масса ≈ 37 млрд т',
-          'a = 2,8216 а.е. · e = 0,5818 · i = 4,31°',
-          'перигелий 1,18 · афелий 4,46 · период 4,70 года',
-          'никель-железо: покрывает 94 % потребности в стали']),
-        (C_WATER, '2', '(1) Церера', 'вода — ближайший крупный источник',
-         ['C-тип, карликовая планета · Ø 939 км',
-          'a = 2,7660 а.е. · e = 0,0785 · i = 10,59°',
-          'период 4,60 года · водяной лёд в коре и мантии',
-          'запас воды превосходит потребность на порядки']),
-        (C_ORG, '3', '(24) Themis', 'вода и органика',
-         ['C/B-тип · Ø 198 км · иней водяного льда',
-          'a = 3,1490 а.е. · e = 0,1165 · i = 0,74°',
-          'на поверхности обнаружены водяной лёд и органика',
-          'семейство Themis — тысячи тел того же состава']),
-        (C_NITRO, '4', '(10) Hygiea', 'азот — буферный газ атмосферы',
-         ['C-тип · Ø 434 км · крупнейшее тело внешнего пояса',
-          'a = 3,1415 а.е. · e = 0,1125 · i = 3,83°',
-          'гидратированные и аммонийные силикаты',
-          'источник 5,51 млрд т азота для атмосферы']),
-        (C_COMET, '5', '67P/Чурюмова — Герасименко', 'льды, аммиак',
-         ['короткопериодическая комета · Ø ядра 4,1 км',
-          'a = 3,4620 а.е. · e = 0,6410 · i = 7,04°',
-          'перигелий 1,24 · афелий 5,68 а.е.',
-          'аммиак и азот во льду — около 1 % массы ядра']),
+        (C_METAL, '1', '(6178) 1986 DA', 'диаметр Ø 3,0 км · a 2,8216 · e 0,5818 · металл', 'определяющий ресурс стали'),
+        (C_WATER, '2', '(1) Церера', 'диаметр Ø 939 км · a 2,7660 · e 0,0785 · вода', 'крупнейший близкий источник воды'),
+        (C_ORG, '3', '(24) Themis', 'диаметр Ø 198 км · a 3,1490 · вода и органика', 'водяной лёд и органические вещества'),
+        (C_NITRO, '4', '(10) Hygiea', 'диаметр Ø 434 км · a 3,1415 · e 0,1125 · азот', 'буферный газ атмосферы'),
+        (C_COMET, '5', '67P/Чурюмова — Герасименко', 'диаметр Ø 4,1 км · a 3,4620 · льды и аммиак', 'дальний кометный источник летучих'),
     ]
-    for c, m, name, role, lines in info:
-        lg.add_patch(Circle((0.021, y - 0.011), 0.0155, fc=c, ec='none',
+    for c, m, name, line1, line2 in info:
+        lg.add_patch(Circle((0.022, y - 0.013), 0.014, fc=c, ec='none',
                             transform=lg.transAxes, clip_on=False))
-        lg.text(0.021, y - 0.011, m, fontsize=8.2, weight='bold', color=BG,
+        lg.text(0.022, y - 0.013, m, fontsize=7.0, weight='bold', color=BG,
                 ha='center', va='center', transform=lg.transAxes)
-        lg.text(0.058, y, name, fontsize=10.2, weight='bold', color=FG,
-                va='top')
-        lg.text(0.058, y - 0.0225, role, fontsize=8.2, color=c, va='top',
-                style='italic')
-        yy = y - 0.047
-        for ln in lines:
-            lg.text(0.058, yy, ln, fontsize=7.7, color=FG_DIM, va='top')
-            yy -= 0.0182
-        y = yy - 0.0165
+        lg.text(0.060, y, name, fontsize=8.2, weight='bold', color=FG, va='top')
+        lg.text(0.060, y - 0.025, line1, fontsize=7.0, color=c, va='top')
+        lg.text(0.060, y - 0.046, line2, fontsize=6.8, color=FG_DIM, va='top')
+        y -= 0.112
 
-    # ── таблица потребности ──
-    lg.plot([0, 1], [y + 0.008, y + 0.008], color=GRID, lw=1.1)
-    y -= 0.020
-    lg.text(0, y, 'ПОТРЕБНОСТЬ ПРОЕКТА, млрд т', fontsize=9.6,
+    lg.plot([0, 1], [y + 0.018, y + 0.018], color=GRID, lw=0.9)
+    y -= 0.008
+    lg.text(0, y, 'ПОТРЕБНОСТЬ ПРОЕКТА, млрд т', fontsize=8.7,
             weight='bold', color=FG, va='top')
-    y -= 0.030
+    y -= 0.034
     tbl = [
-        ('Сталь 18Ni(300), силовой пояс', '20,83', C_METAL),
-        ('Сталь нержавеющая, гермооболочка', '1,22', C_METAL),
-        ('Сталь всего с силовым набором', '22,05', C_METAL),
+        ('Сталь 18Ni(300), пояс', '20,83', C_METAL),
+        ('Гермооболочка', '1,22', C_METAL),
+        ('Сталь с набором', '22,05', C_METAL),
         ('Сырьё с потерями 25 %', '29,40', C_METAL),
         ('Реголит и боросиликат', '4,65', C_METAL),
         ('Грунт растительный', '8,13', C_ORG),
-        ('Азот атмосферы', '5,51', C_NITRO),
-        ('Кислород атмосферы', '2,04', C_WATER),
+        ('Азот', '5,51', C_NITRO),
+        ('Кислород', '2,04', C_WATER),
         ('Вода', '1,17', C_WATER),
     ]
     for i, (nm, val, c) in enumerate(tbl):
         if i % 2 == 0:
-            lg.add_patch(Rectangle((0, y - 0.0142), 1, 0.0182, fc=BG_LG,
-                                   ec='none', transform=lg.transAxes,
-                                   zorder=0))
-        lg.add_patch(Rectangle((0, y - 0.0125), 0.006, 0.0135, fc=c,
+            lg.add_patch(Rectangle((0, y - 0.014), 1, 0.019, fc=BG_LG,
+                                   ec='none', transform=lg.transAxes, zorder=0))
+        lg.add_patch(Rectangle((0, y - 0.012), 0.008, 0.013, fc=c,
                                ec='none', transform=lg.transAxes, zorder=1))
-        lg.text(0.022, y, nm, fontsize=7.9, color=FG_DIM, va='top', zorder=2)
-        lg.text(1.0, y, val, fontsize=7.9, color=FG, va='top', ha='right',
+        lg.text(0.024, y, nm, fontsize=7.0, color=FG_DIM, va='top', zorder=2)
+        lg.text(1.0, y, val, fontsize=7.0, color=FG, va='top', ha='right',
                 weight='bold', zorder=2)
-        y -= 0.0182
-    y -= 0.006
-    lg.plot([0, 1], [y + 0.006, y + 0.006], color=GRID, lw=0.8)
-    y -= 0.016
-    lg.text(0, y, 'Металл астероида (6178) 1986 DA покрывает 94 % '
-                  'потребности\nв стали. Это определяющее ограничение '
-                  'программы: прочие\nресурсы имеются в избытке '
-                  '(приложение Б, п. Б.16).',
-            fontsize=7.8, color=FG, va='top', linespacing=1.62)
+        y -= 0.024
+    y -= 0.004
+    lg.text(0, y, '1986 DA покрывает около 94 % потребности в стали.\n'
+                  'Остальные источники обеспечивают воду, грунт и летучие.',
+            fontsize=6.9, color=FG, va='top', linespacing=1.45)
 
-    # ── ШКАЛА РАЗМЕРОВ ТЕЛ (врезка) ─────────────────────────────────
-    sc = fig.add_axes([0.038, 0.062, 0.175, 0.150])
-    sc.set_facecolor('#0b1120')
-    sc.set_xlim(0, 1)
-    sc.set_ylim(0, 0.606)      # w/h оси = 1,65 -> круги остаются кругами
-    sc.set_aspect('equal')
-    sc.set_xticks([])
-    sc.set_yticks([])
-    for spine in sc.spines.values():
-        spine.set_color(GRID)
-        spine.set_linewidth(0.9)
-    sc.text(0.045, 0.560, 'ДЕЙСТВИТЕЛЬНЫЕ РАЗМЕРЫ ТЕЛ', fontsize=7.2,
-            color=FG, weight='bold', va='top')
-    sizes = [('Церера', 939.4, C_WATER), ('Hygiea', 434.0, C_NITRO),
-             ('Themis', 198.0, C_ORG), ('67P', 4.1, C_COMET),
-             ('1986 DA', 3.0, C_METAL)]
-    scale = 0.235 / 939.4          # радиус в долях оси
-    xpos = 0.085
-    for nm, dkm, c in sizes:
-        r = max(dkm * scale / 2, 0.0075)
-        sc.add_patch(Circle((xpos + r, 0.275), r, fc=c, ec=_light(c, 0.3),
-                            lw=0.5))
-        sc.text(xpos + r, 0.275 - r - 0.030, nm, fontsize=6.0, color=FG_DIM,
-                ha='center', va='top', rotation=0)
-        sc.text(xpos + r, 0.275 + r + 0.018,
-                f'{dkm:.0f}'.replace('.', ',') if dkm >= 10 else
-                f'{dkm:.1f}'.replace('.', ','),
-                fontsize=5.8, color=c, ha='center', va='bottom')
-        xpos += 2 * r + 0.052
-    sc.text(0.045, 0.038, 'диаметр, км · единый масштаб',
-            fontsize=6.0, color='#5a6a85', va='bottom')
+    ax.text(-5.70, -4.86, 'Диаметры тел приведены в легенде справа; размеры на орбитальной схеме условны.',
+            fontsize=6.4, color=FG_DIM, ha='left', va='center')
 
-    # ── ПОДВАЛ ──────────────────────────────────────────────────────
-    ft = fig.add_axes([0, 0, 1, 1])
-    ft.set_xlim(0, 1)
-    ft.set_ylim(0, 1)
-    ft.axis('off')
-    ft.patch.set_alpha(0)
-    ft.plot([0.030, 0.977], [0.038, 0.038], color=GRID, lw=1.0)
-    ft.text(0.030, 0.026,
-            'МХ «КРЯК» · ММОСО′Н · проект «Уютные регионы» · '
-            'Курское региональное отделение',
-            fontsize=7.6, color=FG_DIM, va='center')
-    ft.text(0.977, 0.026,
-            'Бугаенко Р. С., НИК · 07.09.2026 · элементы орбит: '
-            'JPL Small-Body Database',
-            fontsize=7.6, color=FG_DIM, va='center', ha='right')
+    # Подвал.
+    ft = fig.add_axes([0, 0, 1, 1]); ft.set_xlim(0, 1); ft.set_ylim(0, 1)
+    ft.axis('off'); ft.patch.set_alpha(0)
+    ft.plot([0.035, 0.977], [0.035, 0.035], color=GRID, lw=0.8)
+    ft.text(0.035, 0.019, 'ММОСО′Н · личный проект · ресурсная карта · формат A3, альбом',
+            fontsize=6.4, color=FG_DIM, va='center')
+    ft.text(0.977, 0.019, 'Бугаенко Р. С., НИК · 07.09.2026 · JPL Small-Body Database',
+            fontsize=6.4, color=FG_DIM, va='center', ha='right')
 
     png = os.path.join(HERE, 'resource_map.png')
     pdf = os.path.join(HERE, 'resource_map.pdf')

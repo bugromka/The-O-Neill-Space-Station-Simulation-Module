@@ -36,7 +36,7 @@ class Sheet:
 
     def __init__(self, fmt='A3', title='', material='', scale='1:1',
                  number='', author='Бугаенко Р. С.', checker='НИК',
-                 date='07.09.2026', org='МХ «КРЯК»  ММОСО’Н',
+                 date='07.09.2026', org='ММОСО’Н — личный проект',
                  mass='—', sheet_no='1', sheets='1', lit=('У', '', ''),
                  approver=''):
         self.W, self.H = FORMATS[fmt]

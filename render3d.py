@@ -291,5 +291,6 @@ d.ellipse([ex_-er,ey_-er,ex_+er,ey_+er], fill=(92,132,190))
 d.ellipse([ex_-er+5,ey_-er+3,ex_+er-9,ey_+er-11], fill=(120,158,205))
 d.ellipse([ex_-er+3,ey_-er+9,ex_-er+13,ey_-er+19], fill=(96,140,110))
 im=im.filter(ImageFilter.SMOOTH)
-im.save('poster_exterior_technical.jpg',quality=95)
-print('poster_exterior_technical.jpg сохранён', im.size)
+# Стационарный постерный вывод удалён из комплекта проекта.
+# Изображение остаётся в памяти для интерактивного запуска, но файл не сохраняется.
+print('отрисовка внешнего вида завершена; постерный файл намеренно не сохраняется', im.size)

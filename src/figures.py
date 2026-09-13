@@ -588,7 +588,6 @@ def fig09():
 
     ax.plot(T, area, color=C_STEEL, lw=2.0, zorder=4)
     ax.axhline(1477, color=C_OK, lw=1.5, ls='--')
-    ax.axhline(477, color=C_ACC, lw=1.2, ls=':')
     ax.axvline(60, color='#555', lw=0.8, ls='--')
 
     pts = [('1', 25, 1594, C_ACC), ('2', 60, 1022, C_STEEL), ('3', 80, 809, C_STEEL)]
@@ -600,9 +599,6 @@ def fig09():
     ax.text(70, 1560, 'А', fontsize=7.8, weight='bold', color='white',
             ha='center', va='center',
             bbox=dict(boxstyle='circle,pad=0.26', fc=C_OK, ec='none'))
-    ax.text(70, 560, 'Б', fontsize=7.8, weight='bold', color='white',
-            ha='center', va='center',
-            bbox=dict(boxstyle='circle,pad=0.26', fc=C_ACC, ec='none'))
 
     ax.set_xlabel('температура радиатора, °C', fontsize=8.5)
     ax.set_ylabel('площадь радиаторов, км²', fontsize=8.5)
@@ -620,11 +616,10 @@ def fig09():
             ' четвёртая степень', fontsize=7.3, va='top', color='#555',
             transform=lg.transAxes)
 
-    rows = [('1', C_ACC, '25 °C — 1 594 км²', 'больше располагаемой, режим не проходит'),
+    rows = [('1', C_ACC, '25 °C — 1 594 км²', 'больше располагаемой площади'),
             ('2', C_STEEL, '60 °C — 1 022 км²', 'принятая температура, запас 1,45'),
-            ('3', C_STEEL, '80 °C — 809 км²', 'запас больше, но растут потери в насосах'),
-            ('А', C_OK, 'Располагаемая площадь 1 477 км²', 'редакция 3.0, таблица 4.3'),
-            ('Б', C_ACC, 'Площадь редакции 2.0 — 477 км²', 'недостаточна, отвергнута')]
+            ('3', C_STEEL, '80 °C — 809 км²', 'больший запас, но выше требования к насосам'),
+            ('А', C_OK, 'Располагаемая площадь 1 477 км²', 'принятая система радиаторов')]
     yy = 0.700
     for m, c, title, note in rows:
         lg.text(0.030, yy - 0.028, m, fontsize=7.6, weight='bold', color='white',
@@ -1172,9 +1167,9 @@ def fig16():
              'Сталь нержавеющая, гермооболочка']
     notes = ['определяющий ресурс: 94 % металла астероида (6178) 1986 DA',
              'переработка реголита, обеспечено',
-             'требует отдельной программы добычи',
+             'концептуальная программа гл. 8; график, квалификация и испытания — в разработке',
              'дроблёный реголит, обеспечено',
-             'требует отдельной программы добычи',
+             'концептуальная программа гл. 8; график, квалификация и испытания — в разработке',
              'обеспечено']
     need = [20.83, 8.13, 7.55, 4.65, 1.17, 1.22]
     stat = ['опр', 'ок', 'прог', 'ок', 'прог', 'ок']
@@ -1526,10 +1521,11 @@ def fig21():
             fontsize=9.0, weight='bold', va='top', transform=lg.transAxes)
     rows = [('1', C_OK, 'Кислород 1,69 млрд т — из реголита',
              '3,94 млрд т сырья · получается попутно при\n'
-             'добыче радзащиты и грунта, отдельной программы нет'),
+             'добыче радзащиты и грунта; отдельной установки нет'),
             ('2', C_WARN, 'Вода 1,17 млрд т — из хондритов CI',
-             '5,85 млрд т сырья · достижимо, один объект\n'
-             'класса Цереры или несколько малых'),
+             '5,85 млрд т сырья · концептуальная программа разработана;\n'
+             'промышленный график и квалификация оборудования требуют разработки;\n'
+             'полномасштабные испытания не выполнены'),
             ('3', C_ACC, 'Азот 5,51 млрд т — из хондритов',
              '3 674 млрд т сырья · в 79 раз больше массы\n'
              'станции. Путь непроходим'),
@@ -1689,8 +1685,8 @@ def fig23():
             ha='center', va='bottom', color='#63707d', linespacing=1.35)
     ax.text(4.4, 8.66, 'КАРАНТИННЫЙ КОНТУР', fontsize=7.2, weight='bold',
             ha='center', va='bottom', color='#a6791b')
-    ax.text(7.5, 8.66, 'ЖИЛОЙ\nОБЪЁМ', fontsize=7.2, weight='bold',
-            ha='center', va='bottom', color='#3f7350', linespacing=1.35)
+    ax.text(7.5, 8.66, 'К ОБЩЕМУ\nКАНАЛУ', fontsize=7.2, weight='bold',
+            ha='center', va='bottom', color=C_STEEL, linespacing=1.35)
 
     # гермопереборки на границах
     for xx in (2.6, 6.2):
@@ -1710,12 +1706,21 @@ def fig23():
         ax.text(6.62, y, m, fontsize=7.6, weight='bold', color='white',
                 ha='center', va='center', zorder=7,
                 bbox=dict(boxstyle='circle,pad=0.26', fc=c, ec='none'))
+        # После карантина четыре потока сходятся в один общий канал.
+        ax.annotate('', xy=(7.05, 4.20), xytext=(6.86, y),
+                    arrowprops=dict(arrowstyle='-', lw=1.0, color=c), zorder=5)
         # ступени обработки внутри контура
         for k, xx in enumerate((3.25, 4.35, 5.45)):
             ax.add_patch(Rectangle((xx - 0.36, y - 0.42), 0.72, 0.84,
                                    fc='white', ec=c, lw=1.0, zorder=6))
             ax.text(xx, y, 'I II III'.split()[k], fontsize=6.6, ha='center',
                     va='center', color=c, zorder=7)
+    ax.annotate('', xy=(8.35, 4.20), xytext=(7.05, 4.20),
+                arrowprops=dict(arrowstyle='-|>', lw=1.5, color=C_STEEL), zorder=6)
+    ax.text(7.66, 4.62, 'один канал Ø8 м', fontsize=6.7, ha='center',
+            va='bottom', color=C_STEEL, weight='bold')
+    ax.text(7.66, 3.78, 'полая ось → передняя полусфера', fontsize=5.9,
+            ha='center', va='top', color='#555')
 
     ax.set_xlim(-0.15, 8.95); ax.set_ylim(-0.35, 10.25)
     ax.axis('off')

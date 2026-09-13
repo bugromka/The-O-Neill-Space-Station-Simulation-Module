@@ -5,3 +5,6 @@ _t.py
 _pg_try.py
 *.tmp
 .DS_Store
+
+# Local GitHub deploy credentials
+.deploy-keys/
