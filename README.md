@@ -32,11 +32,9 @@
 |---|---|
 | `MMOSON_russian_publication.docx` | основной документ научной публикации на русском языке |
 | `MMOSON_english_publication.docx` | основной документ научной публикации на английском языке |
-| `draw/` | исходники чертежей ЕСКД |
 | `src/` | генераторы документа и расчётная верификация |
 | `resource_map.png`, `resource_map.pdf` | ресурсная карта программы |
-| `MMOSON_drawings.pdf` | обновлённый альбом из 7 чертёжных листов |
-| `fig/`, `draw/` | рисунки, исходники чертежей и генераторы |
+| `fig/` | иллюстрации и графики публикации |
 
 ### Проверка расчётов
 
@@ -55,7 +53,7 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 В рамках проекта автор занимается концепцией и архитектурой станции, климатическим зонированием, составом биоценозов, инженерными решениями, продовольственным и водным балансами.
 
-**НИК** (Нить искренности в Континууме) — расчётная верификация, пересчёт прочности и балансов, оформление документа и чертежей.
+**НИК** (Нить искренности в Континууме) — расчётная верификация, пересчёт прочности и балансов, оформление документа и верификация.
 
 ### Лицензия
 
@@ -95,11 +93,9 @@ Lighting is provided only by reactors through axial light-and-thermal beams. The
 |---|---|
 | `MMOSON_russian_publication.docx` | main scientific-publication document in Russian |
 | `MMOSON_english_publication.docx` | main scientific-publication document in English |
-| `draw/` | source files for ESKD drawings |
 | `src/` | document generators and calculation verification |
 | `resource_map.png`, `resource_map.pdf` | program resource map |
-| `MMOSON_drawings.pdf` | updated album of 7 technical drawing sheets |
-| `fig/`, `draw/` | figures, drawing sources and generators |
+| `fig/` | publication figures and charts |
 
 ### Calculation checks
 
@@ -118,7 +114,7 @@ python3 audit_tables_figures_v7.py ../MMOSON_russian_publication.docx
 
 Within MMOSON, the author works on the station concept and architecture, climate zoning, biocenosis composition, engineering solutions, and food and water balances.
 
-**NIK** (*Thread of Sincerity in the Continuum*) performs calculation verification, strength and balance recalculation, and document and drawing preparation.
+**NIK** (*Thread of Sincerity in the Continuum*) performs calculation verification, strength and balance recalculation, and document preparation and verification.
 
 ### Licence
 
