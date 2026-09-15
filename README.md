@@ -35,7 +35,8 @@
 | `draw/` | исходники чертежей ЕСКД |
 | `src/` | генераторы документа и расчётная верификация |
 | `resource_map.png`, `resource_map.pdf` | ресурсная карта программы |
-| `fig/`, `drawings/` | рисунки и листы в PNG |
+| `MMOSON_drawings.pdf` | обновлённый альбом из 7 чертёжных листов |
+| `fig/`, `draw/` | рисунки, исходники чертежей и генераторы |
 
 ### Проверка расчётов
 
@@ -97,7 +98,8 @@ Lighting is provided only by reactors through axial light-and-thermal beams. The
 | `draw/` | source files for ESKD drawings |
 | `src/` | document generators and calculation verification |
 | `resource_map.png`, `resource_map.pdf` | program resource map |
-| `fig/`, `drawings/` | figures and PNG drawing sheets |
+| `MMOSON_drawings.pdf` | updated album of 7 technical drawing sheets |
+| `fig/`, `draw/` | figures, drawing sources and generators |
 
 ### Calculation checks
 
